@@ -32,7 +32,7 @@ const services = [
 
 export default function ServicesOverview() {
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-sky-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">Our Services</h2>
@@ -43,7 +43,7 @@ export default function ServicesOverview() {
 
         <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {services.map((service) => (
-            <Card key={service.title} className="border-2 hover:border-primary/50 transition-colors">
+            <Card key={service.title} className="border-2 hover:border-primary/50 transition-colors bg-white">
               <CardHeader>
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <service.icon className="h-6 w-6 text-primary" />
