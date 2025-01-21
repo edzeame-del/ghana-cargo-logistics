@@ -1,7 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
-import { Ship } from 'lucide-react';
 
 // Fix for default marker icon in react-leaflet
 delete (Icon.Default.prototype as any)._getIconUrl;
@@ -26,14 +25,18 @@ type VesselMapProps = {
 
 export default function VesselMap({ vessel }: VesselMapProps) {
   // Default to Ghana's coordinates if no vessel is selected
-  const center = vessel ? [vessel.latitude, vessel.longitude] : [5.6037, -0.1870];
+  const defaultCenter: [number, number] = [5.6037, -0.1870];
+  const position: [number, number] = vessel 
+    ? [vessel.latitude, vessel.longitude]
+    : defaultCenter;
 
   return (
     <div className="h-[600px] w-full rounded-lg overflow-hidden border">
       <MapContainer
-        center={[center[0], center[1]]}
+        center={position}
         zoom={vessel ? 12 : 6}
         className="h-full w-full"
+        scrollWheelZoom={true}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
