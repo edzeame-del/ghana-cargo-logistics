@@ -10,28 +10,22 @@ import Contact from "@/pages/contact";
 import Tracking from "@/pages/tracking";
 import NotFound from "@/pages/not-found";
 
-function Router() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/services" component={Services} />
-          <Route path="/tracking" component={Tracking} />
-          <Route path="/contact" component={Contact} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <Footer />
-    </div>
-  );
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow">
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/services" component={Services} />
+            <Route path="/tracking" component={Tracking} />
+            <Route path="/contact" component={Contact} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+        <Footer />
+      </div>
       <Toaster />
     </QueryClientProvider>
   );
