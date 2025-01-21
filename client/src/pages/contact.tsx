@@ -60,7 +60,7 @@ export default function Contact() {
             {/* Map */}
             <div className="aspect-video rounded-lg overflow-hidden">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3970.3123456789!2d-0.2833!3d5.6500!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNcKwMzcnMTYuOCJOIDDCsDAwJzUwLjgiRQ!5e0!3m2!1sen!2sgh!4v1650000000000!5m2!1sen!2sgh"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3970.0876914572453!2d-0.30498368573439!3d5.6524645334728365!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf9f0f914a3ad7%3A0xc7bc3a1b74d0e483!2sAsofan%2C%20Ofankor%20Barrier!5e0!3m2!1sen!2sgh!4v1673893245872!5m2!1sen!2sgh"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
