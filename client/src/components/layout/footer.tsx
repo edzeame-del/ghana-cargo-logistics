@@ -46,9 +46,9 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>Tema Port, Greater Accra</li>
-              <li>Phone: +233 123 456 789</li>
-              <li>Email: info@msgghana.com</li>
+              <li>Asofan, Ofankor Barrier</li>
+              <li>Phone: 0303955950</li>
+              <li>Email: shipwithmsg@gmail.com</li>
             </ul>
           </div>
         </div>
