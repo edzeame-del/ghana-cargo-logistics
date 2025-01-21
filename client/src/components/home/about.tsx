@@ -16,29 +16,9 @@ export default function About() {
               across Ghana. Our commitment to reliability, efficiency, and customer 
               satisfaction sets us apart in the industry.
             </p>
-            <div className="mt-8">
-              <dl className="grid grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-2xl font-bold text-primary">15+</dt>
-                  <dd className="mt-1 text-gray-600">Years Experience</dd>
-                </div>
-                <div>
-                  <dt className="text-2xl font-bold text-primary">1000+</dt>
-                  <dd className="mt-1 text-gray-600">Satisfied Clients</dd>
-                </div>
-                <div>
-                  <dt className="text-2xl font-bold text-primary">24/7</dt>
-                  <dd className="mt-1 text-gray-600">Support</dd>
-                </div>
-                <div>
-                  <dt className="text-2xl font-bold text-primary">50+</dt>
-                  <dd className="mt-1 text-gray-600">Global Partners</dd>
-                </div>
-              </dl>
-              <Button className="mt-8" asChild>
-                <Link href="/contact">Contact Us</Link>
-              </Button>
-            </div>
+            <Button className="mt-8" asChild>
+              <Link href="/contact">Contact Us</Link>
+            </Button>
           </div>
           <div className="mt-10 lg:mt-0">
             <img
