@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import Services from "@/pages/services";
 import Contact from "@/pages/contact";
 import NotFound from "@/pages/not-found";
+import WhatsAppButton from "@/components/whatsapp-button";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           </Switch>
         </main>
         <Footer />
+        <WhatsAppButton />
       </div>
       <Toaster />
     </QueryClientProvider>
