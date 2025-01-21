@@ -12,9 +12,9 @@ export default function About() {
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               As a leading logistics provider in Ghana, we combine local expertise
-              with global reach to deliver exceptional cargo and freight services.
-              Our commitment to reliability, efficiency, and customer satisfaction
-              sets us apart in the industry.
+              with global reach to deliver exceptional cargo and freight services
+              across Ghana. Our commitment to reliability, efficiency, and customer 
+              satisfaction sets us apart in the industry.
             </p>
             <div className="mt-8">
               <dl className="grid grid-cols-2 gap-4">

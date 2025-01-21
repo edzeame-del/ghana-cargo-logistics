@@ -8,7 +8,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">MSG Ghana</h3>
             <p className="text-gray-400">
-              Your trusted partner in logistics and cargo services across Ghana and beyond.
+              Your trusted partner in logistics and cargo services across Ghana.
             </p>
           </div>
 
