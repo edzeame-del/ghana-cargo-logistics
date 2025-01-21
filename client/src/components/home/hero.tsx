@@ -16,7 +16,7 @@ export default function Hero() {
           Your Trusted Logistics Partner in Ghana
         </h1>
         <p className="mt-6 text-xl text-gray-300 max-w-3xl">
-          MSG Ghana provides comprehensive shipping, logistics, and cargo solutions across Ghana. From sea freight to warehousing, we deliver excellence in every service.
+          MSG Logistics provides comprehensive shipping, logistics, and cargo solutions across Ghana. From sea freight to warehousing, we deliver excellence in every service.
         </p>
         <div className="mt-10 flex space-x-4">
           <Button size="lg" asChild>

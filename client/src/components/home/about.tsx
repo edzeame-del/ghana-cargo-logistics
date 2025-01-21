@@ -8,7 +8,7 @@ export default function About() {
         <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              About MSG Ghana
+              About MSG Logistics
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               As a leading logistics provider in Ghana, we combine local expertise
