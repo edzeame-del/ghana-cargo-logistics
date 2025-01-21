@@ -23,14 +23,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/contact", async (req, res) => {
     try {
       const data = contactSchema.parse(req.body);
-      
-      // Here you would typically:
-      // 1. Save to database
-      // 2. Send notification email
-      // 3. Forward to CRM system
-      // For now we'll just log and respond
       console.log("Contact form submission:", data);
-      
       res.status(200).json({ message: "Message received successfully" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -46,14 +39,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/service-request", async (req, res) => {
     try {
       const data = serviceRequestSchema.parse(req.body);
-      
-      // Here you would typically:
-      // 1. Save to database
-      // 2. Send notification email
-      // 3. Create service ticket
-      // For now we'll just log and respond
       console.log("Service request submission:", data);
-      
       res.status(200).json({ message: "Service request received successfully" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -65,7 +51,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const httpServer = createServer(app);
+  // Vessel tracking endpoint
+  app.get("/api/vessel/search", async (req, res) => {
+    try {
+      const vesselName = req.query.name as string;
 
+      if (!vesselName) {
+        return res.status(400).json({ message: "Vessel name is required" });
+      }
+
+      // Note: This is a mock response for demonstration
+      // In production, you would call the MarineTraffic API here
+      const mockVesselData = {
+        name: vesselName,
+        latitude: 5.6037 + (Math.random() * 0.1),
+        longitude: -0.1870 + (Math.random() * 0.1),
+        speed: Math.floor(Math.random() * 20),
+        course: Math.floor(Math.random() * 360),
+        lastUpdate: new Date().toISOString(),
+      };
+
+      res.json(mockVesselData);
+    } catch (error) {
+      console.error("Vessel search error:", error);
+      res.status(500).json({ message: "Failed to search for vessel" });
+    }
+  });
+
+  const httpServer = createServer(app);
   return httpServer;
 }
