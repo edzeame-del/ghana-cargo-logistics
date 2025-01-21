@@ -1,6 +1,7 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
+import { useEffect } from 'react';
 
 // Fix for default marker icon in react-leaflet
 delete (Icon.Default.prototype as any)._getIconUrl;
@@ -9,6 +10,17 @@ Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Component to handle map view updates
+function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [map, center, zoom]);
+
+  return null;
+}
 
 type VesselLocation = {
   name: string;
@@ -38,6 +50,7 @@ export default function VesselMap({ vessel }: VesselMapProps) {
         className="h-full w-full"
         scrollWheelZoom={true}
       >
+        <MapUpdater center={position} zoom={vessel ? 12 : 6} />
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
