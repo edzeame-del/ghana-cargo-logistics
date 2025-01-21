@@ -20,7 +20,7 @@ export default function Hero() {
         </p>
         <div className="mt-10 flex space-x-4">
           <Button size="lg" asChild>
-            <Link href="/contact">Get Started</Link>
+            <Link href="/terms">Terms & Conditions</Link>
           </Button>
           <Button size="lg" variant="outline" className="bg-white/10" asChild>
             <Link href="/services">Our Services</Link>
