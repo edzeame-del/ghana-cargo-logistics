@@ -6,8 +6,8 @@ export default function Hero() {
     <div className="relative bg-gray-900">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1494961104209-3c223057bd26"
-          alt="Cargo containers"
+          src="https://images.unsplash.com/photo-1577105461965-d6c0999e48af"
+          alt="Container ship at port"
           className="w-full h-full object-cover opacity-40"
         />
       </div>
