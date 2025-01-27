@@ -1,14 +1,20 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function Hero() {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <div className="relative bg-gray-900">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1577105461965-d6c0999e48af"
+          src={imageError 
+            ? "https://images.unsplash.com/photo-1517446915321-65e972f1b494" 
+            : "https://images.unsplash.com/photo-1559136560-8a9e6dfe6807"}
           alt="Container ship at port"
           className="w-full h-full object-cover opacity-40"
+          onError={() => setImageError(true)}
         />
       </div>
       <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
