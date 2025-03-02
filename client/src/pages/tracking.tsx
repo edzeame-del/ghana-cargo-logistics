@@ -13,11 +13,6 @@ type Vessel = {
   mmsi: string;
   trackingUrl: string;
   thumbnailUrl: string;
-  latitude: number;
-  longitude: number;
-  speed: number;
-  course: number;
-  lastUpdate: string;
 };
 
 export default function Tracking() {
@@ -84,7 +79,6 @@ export default function Tracking() {
             </Button>
           </div>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-white p-6 rounded-lg shadow-sm">
