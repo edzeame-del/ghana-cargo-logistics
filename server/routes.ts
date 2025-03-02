@@ -99,8 +99,8 @@ export function registerRoutes(app: Express): Server {
       const imo = imoMatch[1];
       const name = vesselNameMatch[1].replace(/_/g, ' ');
 
-      // Construct a high-resolution thumbnail URL
-      const thumbnailUrl = `https://photos.marinetraffic.com/ais/showphoto.aspx?shipid=${shipId}&size=thumb`;
+      // Construct thumbnail URL from the GENERAL tab
+      const thumbnailUrl = `https://photos.marinetraffic.com/ais/showphoto.aspx?photoid=${shipId}`;
 
       res.json({
         name,
