@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Services from "@/pages/services";
 import Contact from "@/pages/contact";
 import Terms from "@/pages/terms";
+import Tracking from "@/pages/tracking";
 import NotFound from "@/pages/not-found";
 import WhatsAppButton from "@/components/whatsapp-button";
 
@@ -24,6 +25,7 @@ function App() {
               <Route path="/services" component={Services} />
               <Route path="/contact" component={Contact} />
               <Route path="/terms" component={Terms} />
+              <Route path="/tracking" component={Tracking} />
               <Route component={NotFound} />
             </Switch>
           </main>
