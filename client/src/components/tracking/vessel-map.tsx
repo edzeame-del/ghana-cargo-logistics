@@ -1,7 +1,6 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
-import { useEffect } from 'react';
 
 // Fix for default marker icon in react-leaflet
 delete (Icon.Default.prototype as any)._getIconUrl;
@@ -11,62 +10,36 @@ Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Component to handle map view updates
-function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [map, center, zoom]);
-
-  return null;
-}
-
-type VesselLocation = {
+type Vessel = {
+  id: number;
   name: string;
-  latitude: number;
-  longitude: number;
-  speed: number;
-  course: number;
-  lastUpdate: string;
+  imo: string;
+  mmsi: string;
+  trackingUrl: string;
+  thumbnailUrl: string;
 };
 
 type VesselMapProps = {
-  vessel?: VesselLocation;
+  vessel?: Vessel;
 };
 
 export default function VesselMap({ vessel }: VesselMapProps) {
-  // Default to Ghana's coordinates if no vessel is selected
-  const defaultCenter: [number, number] = [5.6037, -0.1870];
-  const position: [number, number] = vessel 
-    ? [vessel.latitude, vessel.longitude]
-    : defaultCenter;
+  // Center on Tema Port, Ghana's largest port
+  const defaultCenter: [number, number] = [5.6167, 0.0167];
+  const defaultZoom = 12;
 
   return (
     <div className="h-[600px] w-full rounded-lg overflow-hidden border">
       <MapContainer
-        center={position}
-        zoom={vessel ? 12 : 6}
+        center={defaultCenter}
+        zoom={defaultZoom}
         className="h-full w-full"
         scrollWheelZoom={true}
       >
-        <MapUpdater center={position} zoom={vessel ? 12 : 6} />
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {vessel && (
-          <Marker position={[vessel.latitude, vessel.longitude]}>
-            <Popup>
-              <div className="p-2">
-                <h3 className="font-bold">{vessel.name}</h3>
-                <p className="text-sm">Speed: {vessel.speed} knots</p>
-                <p className="text-sm">Course: {vessel.course}°</p>
-                <p className="text-sm">Last Update: {new Date(vessel.lastUpdate).toLocaleString()}</p>
-              </div>
-            </Popup>
-          </Marker>
-        )}
       </MapContainer>
     </div>
   );
