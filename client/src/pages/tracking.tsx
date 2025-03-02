@@ -63,31 +63,56 @@ export default function Tracking() {
         {selectedVessel && (
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-6">Current Vessel</h2>
-            <div className="max-w-md mx-auto">
-              <VesselThumbnail vessel={selectedVessel} />
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <VesselThumbnail vessel={selectedVessel} />
+              </div>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold mb-4">Vessel Details</h3>
+                  <dl className="space-y-4">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Vessel Name</dt>
+                      <dd className="mt-1 text-lg text-gray-900">{selectedVessel.name}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">IMO Number</dt>
+                      <dd className="mt-1 text-lg text-gray-900">{selectedVessel.imo}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">MMSI</dt>
+                      <dd className="mt-1 text-lg text-gray-900">{selectedVessel.mmsi}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Current Status</dt>
+                      <dd className="mt-1">
+                        <span className="px-2 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
+                          Active
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                {/* Journey Timeline */}
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold mb-4">Journey Status</h3>
+                  <JourneyTimeline currentStage={currentStage} />
+                  <div className="mt-4 text-center">
+                    <Button onClick={advanceStage} size="sm">
+                      Update Status (Demo)
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Journey Timeline */}
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-          <h2 className="text-2xl font-semibold mb-6">Cargo Journey Status</h2>
-          <JourneyTimeline currentStage={currentStage} />
-          <div className="mt-6 text-center">
-            <Button onClick={advanceStage}>
-              Advance Stage (Demo)
-            </Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <VesselSearch onVesselSelected={setSelectedVessel} />
-            </div>
-          </div>
-          <div className="lg:col-span-2">
-            <VesselMap vessel={selectedVessel} />
-          </div>
+        {/* Map Section */}
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-6">Vessel Location</h2>
+          <VesselMap vessel={selectedVessel} />
         </div>
       </div>
     </div>
