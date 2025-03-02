@@ -167,6 +167,11 @@ export default function VesselsAdmin() {
               value={newVessel.mmsi}
               onChange={(e) => setNewVessel({ ...newVessel, mmsi: e.target.value })}
             />
+            <Input
+              placeholder="Thumbnail URL (Optional - will be auto-populated from MarineTraffic)"
+              value={newVessel.thumbnailUrl}
+              onChange={(e) => setNewVessel({ ...newVessel, thumbnailUrl: e.target.value })}
+            />
             <Button type="submit" disabled={addVesselMutation.isPending}>
               {addVesselMutation.isPending ? "Adding..." : "Add Vessel"}
             </Button>
