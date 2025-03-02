@@ -54,7 +54,7 @@ export default function Hero() {
                     { title: "Global Network", value: "20+" },
                     { title: "Years Experience", value: "5+" },
                     { title: "Happy Clients", value: "1000+" },
-                    { title: "Cargo Delivered (CBM)", value: "15k+" }
+                    { title: "CBM Cargo Delivered", value: "15k+" }
                   ].map((stat) => (
                     <div key={stat.title} className="text-center p-4">
                       <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
