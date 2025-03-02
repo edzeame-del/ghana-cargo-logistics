@@ -1,22 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-
-const contactSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(10),
-  message: z.string().min(10),
-});
-
-const serviceRequestSchema = z.object({
-  companyName: z.string().min(2),
-  contactPerson: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(10),
-  serviceType: z.string().min(1),
-  requirements: z.string().min(10),
-});
+import { db } from "@db";
+import { vessels, insertVesselSchema } from "@db/schema";
+import { eq } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
   // Contact form submission
@@ -51,6 +38,68 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get all vessels
+  app.get("/api/vessels", async (req, res) => {
+    try {
+      const allVessels = await db.query.vessels.findMany({
+        orderBy: (vessels, { desc }) => [desc(vessels.createdAt)],
+      });
+      res.json(allVessels);
+    } catch (error) {
+      console.error("Failed to fetch vessels:", error);
+      res.status(500).json({ message: "Failed to fetch vessels" });
+    }
+  });
+
+  // Add a new vessel
+  app.post("/api/vessels", async (req, res) => {
+    try {
+      const data = insertVesselSchema.parse(req.body);
+      const vessel = await db.insert(vessels).values(data).returning();
+      res.status(201).json(vessel[0]);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid vessel data", errors: error.errors });
+      } else {
+        console.error("Failed to add vessel:", error);
+        res.status(500).json({ message: "Failed to add vessel" });
+      }
+    }
+  });
+
+  // Get a specific vessel
+  app.get("/api/vessels/:id", async (req, res) => {
+    try {
+      const vessel = await db.query.vessels.findFirst({
+        where: eq(vessels.id, parseInt(req.params.id)),
+      });
+      if (!vessel) {
+        res.status(404).json({ message: "Vessel not found" });
+        return;
+      }
+      res.json(vessel);
+    } catch (error) {
+      console.error("Failed to fetch vessel:", error);
+      res.status(500).json({ message: "Failed to fetch vessel" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
+
+const contactSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(10),
+  message: z.string().min(10),
+});
+
+const serviceRequestSchema = z.object({
+  companyName: z.string().min(2),
+  contactPerson: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(10),
+  serviceType: z.string().min(1),
+  requirements: z.string().min(10),
+});

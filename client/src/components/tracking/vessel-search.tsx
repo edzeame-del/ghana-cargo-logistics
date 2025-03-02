@@ -1,83 +1,57 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
-const searchSchema = z.object({
-  vesselName: z.string().min(3, "Vessel name must be at least 3 characters"),
-});
-
-type VesselSearchProps = {
-  onVesselFound: (vesselData: any) => void;
+type Vessel = {
+  id: number;
+  name: string;
+  imo: string;
+  mmsi: string;
+  trackingUrl: string;
+  thumbnailUrl: string;
 };
 
-export default function VesselSearch({ onVesselFound }: VesselSearchProps) {
-  const [error, setError] = useState<string | null>(null);
+type VesselSearchProps = {
+  onVesselSelected: (vessel: Vessel) => void;
+};
 
-  const form = useForm<z.infer<typeof searchSchema>>({
-    resolver: zodResolver(searchSchema),
-    defaultValues: {
-      vesselName: "",
-    },
-  });
-
-  const searchMutation = useMutation({
-    mutationFn: async (vesselName: string) => {
-      const response = await fetch(`/api/vessel/search?name=${encodeURIComponent(vesselName)}`);
-      if (!response.ok) {
-        throw new Error("Failed to find vessel");
-      }
+export default function VesselSearch({ onVesselSelected }: VesselSearchProps) {
+  const { data: vessels, isLoading, error } = useQuery<Vessel[]>({
+    queryKey: ['vessels'],
+    queryFn: async () => {
+      const response = await fetch('/api/vessels');
+      if (!response.ok) throw new Error('Failed to fetch vessels');
       return response.json();
     },
-    onSuccess: (data) => {
-      setError(null);
-      onVesselFound(data);
-    },
-    onError: (error) => {
-      setError(error instanceof Error ? error.message : "Failed to search vessel");
-    },
   });
 
-  function onSubmit(values: z.infer<typeof searchSchema>) {
-    searchMutation.mutate(values.vesselName);
-  }
+  if (isLoading) return <div>Loading vessels...</div>;
+  if (error) return <div>Error loading vessels</div>;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="vesselName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Vessel Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter vessel name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={searchMutation.isPending}
-        >
-          {searchMutation.isPending ? "Searching..." : "Track Vessel"}
-        </Button>
-      </form>
-    </Form>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Select Vessel</h3>
+      <Select onValueChange={(value) => {
+        const vessel = vessels?.find(v => v.id.toString() === value);
+        if (vessel) onVesselSelected(vessel);
+      }}>
+        <SelectTrigger>
+          <SelectValue placeholder="Choose a vessel to track" />
+        </SelectTrigger>
+        <SelectContent>
+          {vessels?.map((vessel) => (
+            <SelectItem key={vessel.id} value={vessel.id.toString()}>
+              {vessel.name} (IMO: {vessel.imo})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

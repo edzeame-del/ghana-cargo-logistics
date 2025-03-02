@@ -10,6 +10,7 @@ import Services from "@/pages/services";
 import Contact from "@/pages/contact";
 import Terms from "@/pages/terms";
 import Tracking from "@/pages/tracking";
+import VesselsAdmin from "@/pages/admin/vessels";
 import NotFound from "@/pages/not-found";
 import WhatsAppButton from "@/components/whatsapp-button";
 
@@ -26,6 +27,7 @@ function App() {
               <Route path="/contact" component={Contact} />
               <Route path="/terms" component={Terms} />
               <Route path="/tracking" component={Tracking} />
+              <Route path="/admin/vessels" component={VesselsAdmin} />
               <Route component={NotFound} />
             </Switch>
           </main>

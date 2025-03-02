@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const users = pgTable("users", {
@@ -11,3 +11,19 @@ export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
+
+export const vessels = pgTable("vessels", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  imo: text("imo").notNull(),
+  mmsi: text("mmsi").notNull(),
+  trackingUrl: text("tracking_url").notNull(),
+  thumbnailUrl: text("thumbnail_url").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertVesselSchema = createInsertSchema(vessels);
+export const selectVesselSchema = createSelectSchema(vessels);
+export type InsertVessel = typeof vessels.$inferInsert;
+export type SelectVessel = typeof vessels.$inferSelect;
