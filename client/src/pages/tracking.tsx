@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import VesselSearch from "@/components/tracking/vessel-search";
 import VesselMap from "@/components/tracking/vessel-map";
 import JourneyTimeline from "@/components/tracking/journey-timeline";
 import VesselThumbnail from "@/components/tracking/vessel-thumbnail";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
-type VesselData = {
+type Vessel = {
+  id: number;
   name: string;
+  imo: string;
+  mmsi: string;
+  trackingUrl: string;
+  thumbnailUrl: string;
   latitude: number;
   longitude: number;
   speed: number;
@@ -15,8 +21,25 @@ type VesselData = {
 };
 
 export default function Tracking() {
-  const [vesselData, setVesselData] = useState<VesselData | undefined>();
+  const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
   const [currentStage, setCurrentStage] = useState(0);
+
+  // Fetch most recent vessel
+  const { data: vessels } = useQuery<Vessel[]>({
+    queryKey: ['vessels'],
+    queryFn: async () => {
+      const response = await fetch('/api/vessels');
+      if (!response.ok) throw new Error('Failed to fetch vessels');
+      return response.json();
+    },
+  });
+
+  // Set the most recent vessel on initial load
+  useEffect(() => {
+    if (vessels && vessels.length > 0 && !selectedVessel) {
+      setSelectedVessel(vessels[0]); // Most recent vessel will be first in the array
+    }
+  }, [vessels, selectedVessel]);
 
   // Demo function to advance the timeline
   const advanceStage = () => {
@@ -37,17 +60,19 @@ export default function Tracking() {
         <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
           <h2 className="text-2xl font-semibold mb-6">Select Vessel to Track</h2>
           <div className="max-w-md mx-auto">
-            <VesselSearch onVesselFound={setVesselData} />
+            <VesselSearch onVesselSelected={setSelectedVessel} />
           </div>
         </div>
 
-        {/* Featured Vessel */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6">Featured Vessel</h2>
-          <div className="max-w-md mx-auto">
-            <VesselThumbnail />
+        {/* Selected Vessel Display */}
+        {selectedVessel && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-semibold mb-6">Current Vessel</h2>
+            <div className="max-w-md mx-auto">
+              <VesselThumbnail vessel={selectedVessel} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Journey Timeline */}
         <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
@@ -63,11 +88,11 @@ export default function Tracking() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <VesselSearch onVesselFound={setVesselData} />
+              <VesselSearch onVesselSelected={setSelectedVessel} />
             </div>
           </div>
           <div className="lg:col-span-2">
-            <VesselMap vessel={vesselData} />
+            <VesselMap vessel={selectedVessel} />
           </div>
         </div>
       </div>
