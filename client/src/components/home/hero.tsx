@@ -51,10 +51,10 @@ export default function Hero() {
               <div className="relative bg-white/10 p-8 rounded-lg border border-white/10">
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { title: "Global Network", value: "50+" },
-                    { title: "Years Experience", value: "15+" },
+                    { title: "Global Network", value: "20+" },
+                    { title: "Years Experience", value: "5+" },
                     { title: "Happy Clients", value: "1000+" },
-                    { title: "Cargo Delivered", value: "5M+" }
+                    { title: "Cargo Delivered", value: "15k+ CBM" }
                   ].map((stat) => (
                     <div key={stat.title} className="text-center p-4">
                       <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
