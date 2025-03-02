@@ -83,21 +83,31 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/vessels/extract-info", async (req, res) => {
     try {
       const { url } = req.body;
-      const matches = url.match(/shipid:(\d+)\/mmsi:(\d+)\/imo:(\d+)\/vessel:([^/]+)/);
 
-      if (!matches) {
+      // Updated regex to handle various MarineTraffic URL formats
+      const shipIdMatch = url.match(/shipid:(\d+)/);
+      const mmsiMatch = url.match(/mmsi:(\d+)/);
+      const imoMatch = url.match(/imo:(\d+)/);
+      const vesselNameMatch = url.match(/vessel:([^/]+)/);
+
+      if (!shipIdMatch || !mmsiMatch || !imoMatch || !vesselNameMatch) {
         return res.status(400).json({ message: "Invalid MarineTraffic URL format" });
       }
 
-      const [_, shipId, mmsi, imo, vesselName] = matches;
-      const name = vesselName.replace(/_/g, ' ');
+      const shipId = shipIdMatch[1];
+      const mmsi = mmsiMatch[1];
+      const imo = imoMatch[1];
+      const name = vesselNameMatch[1].replace(/_/g, ' ');
+
+      // Construct a high-resolution thumbnail URL
+      const thumbnailUrl = `https://photos.marinetraffic.com/ais/showphoto.aspx?shipid=${shipId}&size=thumb`;
 
       res.json({
         name,
         imo,
         mmsi,
         trackingUrl: url,
-        thumbnailUrl: `https://photos.marinetraffic.com/ais/showphoto.aspx?shipid=${shipId}`
+        thumbnailUrl
       });
     } catch (error) {
       console.error("Failed to extract vessel info:", error);
