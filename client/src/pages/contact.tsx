@@ -1,7 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import ContactForm from "@/components/forms/contact-form";
-import ServiceRequestForm from "@/components/forms/service-request";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
 export default function Contact() {
@@ -71,22 +69,11 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Forms */}
+          {/* Contact Form */}
           <div>
             <Card>
               <CardContent className="p-6">
-                <Tabs defaultValue="contact" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="contact">Contact Us</TabsTrigger>
-                    <TabsTrigger value="service">Request Service</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="contact" className="mt-6">
-                    <ContactForm />
-                  </TabsContent>
-                  <TabsContent value="service" className="mt-6">
-                    <ServiceRequestForm />
-                  </TabsContent>
-                </Tabs>
+                <ContactForm />
               </CardContent>
             </Card>
           </div>
