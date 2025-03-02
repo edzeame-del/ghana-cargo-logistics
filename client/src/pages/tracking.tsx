@@ -2,6 +2,7 @@ import { useState } from "react";
 import VesselSearch from "@/components/tracking/vessel-search";
 import VesselMap from "@/components/tracking/vessel-map";
 import JourneyTimeline from "@/components/tracking/journey-timeline";
+import VesselThumbnail from "@/components/tracking/vessel-thumbnail";
 import { Button } from "@/components/ui/button";
 
 type VesselData = {
@@ -30,6 +31,14 @@ export default function Tracking() {
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
             Track your cargo journey and vessel location in real-time
           </p>
+        </div>
+
+        {/* Featured Vessel */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold mb-6">Featured Vessel</h2>
+          <div className="max-w-md mx-auto">
+            <VesselThumbnail />
+          </div>
         </div>
 
         {/* Journey Timeline */}
