@@ -33,6 +33,14 @@ export default function Tracking() {
           </p>
         </div>
 
+        {/* Select Vessel to Track */}
+        <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+          <h2 className="text-2xl font-semibold mb-6">Select Vessel to Track</h2>
+          <div className="max-w-md mx-auto">
+            <VesselSearch onVesselFound={setVesselData} />
+          </div>
+        </div>
+
         {/* Featured Vessel */}
         <div className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Featured Vessel</h2>
