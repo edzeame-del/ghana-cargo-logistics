@@ -67,6 +67,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Delete a vessel
+  app.delete("/api/vessels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await db.delete(vessels).where(eq(vessels.id, id));
+      res.json({ message: "Vessel deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete vessel:", error);
+      res.status(500).json({ message: "Failed to delete vessel" });
+    }
+  });
+
+  // Extract vessel info from MarineTraffic URL
+  app.post("/api/vessels/extract-info", async (req, res) => {
+    try {
+      const { url } = req.body;
+      const matches = url.match(/shipid:(\d+)\/mmsi:(\d+)\/imo:(\d+)\/vessel:([^/]+)/);
+
+      if (!matches) {
+        return res.status(400).json({ message: "Invalid MarineTraffic URL format" });
+      }
+
+      const [_, shipId, mmsi, imo, vesselName] = matches;
+      const name = vesselName.replace(/_/g, ' ');
+
+      res.json({
+        name,
+        imo,
+        mmsi,
+        trackingUrl: url,
+        thumbnailUrl: `https://photos.marinetraffic.com/ais/showphoto.aspx?shipid=${shipId}`
+      });
+    } catch (error) {
+      console.error("Failed to extract vessel info:", error);
+      res.status(500).json({ message: "Failed to extract vessel information" });
+    }
+  });
+
   // Get a specific vessel
   app.get("/api/vessels/:id", async (req, res) => {
     try {
