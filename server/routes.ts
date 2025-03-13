@@ -67,6 +67,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update a vessel
+  app.put("/api/vessels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertVesselSchema.parse(req.body);
+      const updatedVessel = await db
+        .update(vessels)
+        .set(data)
+        .where(eq(vessels.id, id))
+        .returning();
+
+      if (updatedVessel.length === 0) {
+        res.status(404).json({ message: "Vessel not found" });
+        return;
+      }
+
+      res.json(updatedVessel[0]);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid vessel data", errors: error.errors });
+      } else {
+        console.error("Failed to update vessel:", error);
+        res.status(500).json({ message: "Failed to update vessel" });
+      }
+    }
+  });
+
   // Delete a vessel
   app.delete("/api/vessels/:id", async (req, res) => {
     try {

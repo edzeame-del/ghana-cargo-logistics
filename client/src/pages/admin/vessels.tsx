@@ -21,12 +21,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Trash2, Edit2 } from "lucide-react";
 
 export default function VesselsAdmin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [trackingUrl, setTrackingUrl] = useState("");
+  const [editingVessel, setEditingVessel] = useState<null | any>(null);
   const [newVessel, setNewVessel] = useState({
     name: "",
     imo: "",
@@ -78,6 +88,33 @@ export default function VesselsAdmin() {
     },
   });
 
+  const updateVesselMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: typeof newVessel }) => {
+      const response = await fetch(`/api/vessels/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update vessel');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vessels'] });
+      setEditingVessel(null);
+      toast({
+        title: "Success",
+        description: "Vessel updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update vessel",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteVesselMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/vessels/${id}`, {
@@ -113,7 +150,11 @@ export default function VesselsAdmin() {
       if (!response.ok) throw new Error('Failed to extract vessel information');
 
       const data = await response.json();
-      setNewVessel(data);
+      if (editingVessel) {
+        setEditingVessel({ ...editingVessel, ...data });
+      } else {
+        setNewVessel(data);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -123,7 +164,7 @@ export default function VesselsAdmin() {
     }
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>, isEditing = false) => {
     const url = e.target.value;
     setTrackingUrl(url);
     if (url.includes('marinetraffic.com')) {
@@ -136,6 +177,52 @@ export default function VesselsAdmin() {
     addVesselMutation.mutate(newVessel);
   };
 
+  const handleUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingVessel) {
+      updateVesselMutation.mutate({
+        id: editingVessel.id,
+        data: editingVessel
+      });
+    }
+  };
+
+  const VesselForm = ({ data, onChange, onSubmit, submitText }: any) => (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Input
+        placeholder="MarineTraffic URL"
+        value={data.trackingUrl}
+        onChange={(e) => {
+          onChange({ ...data, trackingUrl: e.target.value });
+          handleUrlChange(e);
+        }}
+      />
+      <Input
+        placeholder="Vessel Name"
+        value={data.name}
+        onChange={(e) => onChange({ ...data, name: e.target.value })}
+      />
+      <Input
+        placeholder="IMO Number"
+        value={data.imo}
+        onChange={(e) => onChange({ ...data, imo: e.target.value })}
+      />
+      <Input
+        placeholder="MMSI Number"
+        value={data.mmsi}
+        onChange={(e) => onChange({ ...data, mmsi: e.target.value })}
+      />
+      <Input
+        placeholder="Thumbnail URL"
+        value={data.thumbnailUrl}
+        onChange={(e) => onChange({ ...data, thumbnailUrl: e.target.value })}
+      />
+      <Button type="submit">
+        {submitText}
+      </Button>
+    </form>
+  );
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">Manage Vessels</h1>
@@ -146,36 +233,12 @@ export default function VesselsAdmin() {
           <CardDescription>Enter MarineTraffic URL to auto-populate vessel details</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              placeholder="MarineTraffic URL"
-              value={trackingUrl}
-              onChange={handleUrlChange}
-            />
-            <Input
-              placeholder="Vessel Name"
-              value={newVessel.name}
-              onChange={(e) => setNewVessel({ ...newVessel, name: e.target.value })}
-            />
-            <Input
-              placeholder="IMO Number"
-              value={newVessel.imo}
-              onChange={(e) => setNewVessel({ ...newVessel, imo: e.target.value })}
-            />
-            <Input
-              placeholder="MMSI Number"
-              value={newVessel.mmsi}
-              onChange={(e) => setNewVessel({ ...newVessel, mmsi: e.target.value })}
-            />
-            <Input
-              placeholder="Thumbnail URL (Optional - will be auto-populated from MarineTraffic)"
-              value={newVessel.thumbnailUrl}
-              onChange={(e) => setNewVessel({ ...newVessel, thumbnailUrl: e.target.value })}
-            />
-            <Button type="submit" disabled={addVesselMutation.isPending}>
-              {addVesselMutation.isPending ? "Adding..." : "Add Vessel"}
-            </Button>
-          </form>
+          <VesselForm
+            data={newVessel}
+            onChange={setNewVessel}
+            onSubmit={handleSubmit}
+            submitText={addVesselMutation.isPending ? "Adding..." : "Add Vessel"}
+          />
         </CardContent>
       </Card>
 
@@ -201,6 +264,29 @@ export default function VesselsAdmin() {
                       >
                         View Tracking
                       </Button>
+
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="icon">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Vessel</DialogTitle>
+                            <DialogDescription>
+                              Update the vessel information below
+                            </DialogDescription>
+                          </DialogHeader>
+                          <VesselForm
+                            data={editingVessel || vessel}
+                            onChange={setEditingVessel}
+                            onSubmit={handleUpdate}
+                            submitText={updateVesselMutation.isPending ? "Updating..." : "Update Vessel"}
+                          />
+                        </DialogContent>
+                      </Dialog>
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="icon">
