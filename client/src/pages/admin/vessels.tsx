@@ -25,7 +25,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -89,13 +88,17 @@ export default function VesselsAdmin() {
   });
 
   const updateVesselMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: typeof newVessel }) => {
+    mutationFn: async (vessel: any) => {
+      const { id, ...data } = vessel;
       const response = await fetch(`/api/vessels/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error('Failed to update vessel');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update vessel');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -106,10 +109,10 @@ export default function VesselsAdmin() {
         description: "Vessel updated successfully",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to update vessel",
+        description: error.message || "Failed to update vessel",
         variant: "destructive",
       });
     },
@@ -164,9 +167,8 @@ export default function VesselsAdmin() {
     }
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>, isEditing = false) => {
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
-    setTrackingUrl(url);
     if (url.includes('marinetraffic.com')) {
       extractVesselInfo(url);
     }
@@ -180,10 +182,7 @@ export default function VesselsAdmin() {
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingVessel) {
-      updateVesselMutation.mutate({
-        id: editingVessel.id,
-        data: editingVessel
-      });
+      updateVesselMutation.mutate(editingVessel);
     }
   };
 
@@ -267,7 +266,7 @@ export default function VesselsAdmin() {
 
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="icon">
+                          <Button variant="outline" size="icon" onClick={() => setEditingVessel(vessel)}>
                             <Edit2 className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
