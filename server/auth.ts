@@ -96,4 +96,38 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  app.post("/api/change-password", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new passwords are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters long" });
+      }
+
+      // Verify current password
+      const [user] = await db.select().from(users).where(eq(users.id, req.user!.id)).limit(1);
+      if (!user || !(await comparePasswords(currentPassword, user.password))) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Update password
+      const hashedNewPassword = await hashPassword(newPassword);
+      await db
+        .update(users)
+        .set({ password: hashedNewPassword })
+        .where(eq(users.id, req.user!.id));
+
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
 }
