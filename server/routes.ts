@@ -171,14 +171,19 @@ export function registerRoutes(app: Express): Server {
       // Clear existing data and insert new data
       await db.delete(trackingData);
       
-      const insertData = data.map(row => ({
-        shippingMark: row["shipping mark"] || row["shipping_mark"] || "",
-        dateReceived: row["Date Received"] || row["date_received"] || "",
-        dateLoaded: row["Date Loaded"] || row["date_loaded"] || "",
-        quantity: row["Quantity"] || row["quantity"] || "",
-        cbm: row["CBM"] || row["cbm"] || "",
-        trackingNumber: row["tracking number"] || row["tracking_number"] || "",
-      }));
+      const insertData = data.map(row => {
+        const dateReceived = row["Date Received"] || row["date_received"] || "";
+        const dateLoaded = row["Date Loaded"] || row["date_loaded"] || "";
+        
+        return {
+          shippingMark: row["shipping mark"] || row["shipping_mark"] || "",
+          dateReceived: dateReceived.toString().trim(),
+          dateLoaded: dateLoaded.toString().trim(), 
+          quantity: row["Quantity"] || row["quantity"] || "",
+          cbm: row["CBM"] || row["cbm"] || "",
+          trackingNumber: row["tracking number"] || row["tracking_number"] || "",
+        };
+      });
 
       const result = await db.insert(trackingData).values(insertData).returning();
       res.json({ message: "CSV data uploaded successfully", count: result.length });

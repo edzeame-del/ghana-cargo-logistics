@@ -101,7 +101,29 @@ export default function TrackingAdmin() {
           const parsedData = rows.map(row => {
             const obj: any = {};
             headers.forEach((header, index) => {
-              obj[header] = row[index] || '';
+              let value = row[index];
+              
+              // Handle Excel date values
+              if ((header.toLowerCase().includes('date') || 
+                   header.toLowerCase().includes('received') || 
+                   header.toLowerCase().includes('loaded')) && value) {
+                
+                if (typeof value === 'number' && value > 0) {
+                  // Excel date serial number - convert to JavaScript date
+                  const jsDate = new Date((value - 25569) * 86400 * 1000);
+                  if (!isNaN(jsDate.getTime())) {
+                    value = jsDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+                  }
+                } else if (typeof value === 'string' && value.trim()) {
+                  // Try to parse as date string
+                  const parsedDate = new Date(value);
+                  if (!isNaN(parsedDate.getTime())) {
+                    value = parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+                  }
+                }
+              }
+              
+              obj[header] = value ? String(value).trim() : '';
             });
             return obj;
           });

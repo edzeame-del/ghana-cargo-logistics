@@ -56,9 +56,15 @@ export default function Tracking() {
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return "N/A";
+    if (!dateStr || dateStr.trim() === '') return "N/A";
     try {
-      return new Date(dateStr).toLocaleDateString();
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
     } catch {
       return dateStr;
     }
