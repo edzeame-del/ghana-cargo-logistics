@@ -193,12 +193,13 @@ export default function TrackingAdmin() {
     if (data.length === 0) return { valid: false, missing: expectedColumns };
 
     const headers = Object.keys(data[0]);
-    const normalizeColumnName = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-
-    const missing = expectedColumns.filter(col => {
-      const normalizedExpected = normalizeColumnName(col);
-      return !headers.some(h => normalizeColumnName(h) === normalizedExpected);
-    });
+    const requiredColumns = [
+      "TRACKING NUMBER", "CBM", "QUANTITY", "RECEIVED", "LOADED", "SHIPPING MARK"
+    ];
+    
+    const missing = requiredColumns.filter(col => 
+      !headers.some(h => h.toLowerCase().replace(/[^a-z0-9]/g, '') === col.toLowerCase().replace(/[^a-z0-9]/g, ''))
+    );
 
     return { valid: missing.length === 0, missing };
   };
