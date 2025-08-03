@@ -30,13 +30,12 @@ export type SelectVessel = typeof vessels.$inferSelect;
 
 export const trackingData = pgTable("tracking_data", {
   id: serial("id").primaryKey(),
-  trackingNumber: text("tracking_number").notNull().unique(),
   shippingMark: text("shipping_mark").notNull(),
   dateReceived: text("date_received"),
   dateLoaded: text("date_loaded"),
   quantity: text("quantity"),
   cbm: text("cbm"),
-  eta: text("eta"),
+  trackingNumber: text("tracking_number").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

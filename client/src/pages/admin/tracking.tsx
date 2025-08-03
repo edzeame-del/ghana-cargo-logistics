@@ -124,8 +124,8 @@ export default function TrackingAdmin() {
   };
 
   const expectedColumns = [
-    "Tracking number", "shipping mark", "Date Received", 
-    "Date Loaded", "Quantity", "CBM", "ETA"
+    "shipping mark", "Date Received", "Date Loaded", 
+    "Quantity", "CBM", "tracking number"
   ];
 
   const validateColumns = (data: any[]) => {
@@ -156,7 +156,7 @@ export default function TrackingAdmin() {
               Upload CSV Data
             </CardTitle>
             <CardDescription>
-              Upload a CSV file with tracking information. Expected columns: {expectedColumns.join(", ")}
+              Upload a CSV file with tracking information. Expected columns (in order): {expectedColumns.join(", ")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -237,25 +237,23 @@ export default function TrackingAdmin() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Tracking Number</TableHead>
                       <TableHead>Shipping Mark</TableHead>
                       <TableHead>Date Received</TableHead>
                       <TableHead>Date Loaded</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>CBM</TableHead>
-                      <TableHead>ETA</TableHead>
+                      <TableHead>Tracking Number</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {trackingData.map((item: any) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-mono text-sm">{item.trackingNumber}</TableCell>
                         <TableCell>{item.shippingMark}</TableCell>
                         <TableCell>{item.dateReceived}</TableCell>
                         <TableCell>{item.dateLoaded}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>{item.cbm}</TableCell>
-                        <TableCell>{item.eta}</TableCell>
+                        <TableCell className="font-mono text-sm">{item.trackingNumber}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

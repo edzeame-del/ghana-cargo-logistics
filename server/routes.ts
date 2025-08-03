@@ -172,13 +172,12 @@ export function registerRoutes(app: Express): Server {
       await db.delete(trackingData);
       
       const insertData = data.map(row => ({
-        trackingNumber: row["Tracking number"] || row["tracking_number"] || "",
         shippingMark: row["shipping mark"] || row["shipping_mark"] || "",
         dateReceived: row["Date Received"] || row["date_received"] || "",
         dateLoaded: row["Date Loaded"] || row["date_loaded"] || "",
         quantity: row["Quantity"] || row["quantity"] || "",
         cbm: row["CBM"] || row["cbm"] || "",
-        eta: row["ETA"] || row["eta"] || "",
+        trackingNumber: row["tracking number"] || row["tracking_number"] || "",
       }));
 
       const result = await db.insert(trackingData).values(insertData).returning();
