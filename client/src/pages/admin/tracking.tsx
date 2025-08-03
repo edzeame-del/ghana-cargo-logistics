@@ -108,22 +108,25 @@ export default function TrackingAdmin() {
                    header.toLowerCase().includes('received') || 
                    header.toLowerCase().includes('loaded')) && value) {
                 
-                if (typeof value === 'number' && value > 0) {
-                  // Excel date serial number - convert to JavaScript date
-                  const jsDate = new Date((value - 25569) * 86400 * 1000);
-                  if (!isNaN(jsDate.getTime())) {
+                if (typeof value === 'number' && value > 0 && value < 100000) {
+                  // Excel serial date conversion (corrected formula)
+                  const excelEpoch = new Date(1900, 0, 1);
+                  const jsDate = new Date(excelEpoch.getTime() + (value - 1) * 24 * 60 * 60 * 1000);
+                  if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 2100) {
                     value = jsDate.toISOString().split('T')[0]; // YYYY-MM-DD format
                   }
                 } else if (typeof value === 'string' && value.trim()) {
                   // Try to parse as date string
-                  const parsedDate = new Date(value);
-                  if (!isNaN(parsedDate.getTime())) {
+                  const parsedDate = new Date(value.trim());
+                  if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 1900 && parsedDate.getFullYear() < 2100) {
                     value = parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
                   }
                 }
               }
               
-              obj[header] = value ? String(value).trim() : '';
+              // Normalize header names for consistent mapping
+              const normalizedHeader = header.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+              obj[normalizedHeader] = value ? String(value).trim() : '';
             });
             return obj;
           });

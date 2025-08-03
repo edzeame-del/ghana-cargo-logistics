@@ -171,9 +171,26 @@ export function registerRoutes(app: Express): Server {
       // Clear existing data and insert new data
       await db.delete(trackingData);
       
+      console.log('Processing upload data:', JSON.stringify(data.slice(0, 2), null, 2));
+      
       const insertData = data.map(row => {
-        let dateReceived = row["Date Received"] || row["date_received"] || "";
-        let dateLoaded = row["Date Loaded"] || row["date_loaded"] || "";
+        // Handle normalized column names from frontend
+        const getColumnValue = (variations: string[]) => {
+          for (const variation of variations) {
+            const normalized = variation.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (row[normalized] !== undefined && row[normalized] !== '') {
+              return row[normalized];
+            }
+            // Also check original column names for backward compatibility
+            if (row[variation] !== undefined && row[variation] !== '') {
+              return row[variation];
+            }
+          }
+          return "";
+        };
+
+        let dateReceived = getColumnValue(["Date Received", "date received", "datereceived", "received"]);
+        let dateLoaded = getColumnValue(["Date Loaded", "date loaded", "dateloaded", "loaded"]);
         
         // Process dates similar to frontend logic
         const processDate = (dateValue: any) => {
@@ -231,16 +248,20 @@ export function registerRoutes(app: Express): Server {
           return null;
         };
         
-        return {
-          shippingMark: row["shipping mark"] || row["shipping_mark"] || "",
+        const processed = {
+          shippingMark: getColumnValue(["shipping mark", "shipping_mark", "shippingmark", "mark"]),
           dateReceived: processDate(dateReceived),
           dateLoaded: processDate(dateLoaded),
-          quantity: row["Quantity"] || row["quantity"] || "",
-          cbm: row["CBM"] || row["cbm"] || "",
-          trackingNumber: row["tracking number"] || row["tracking_number"] || "",
+          quantity: getColumnValue(["Quantity", "quantity", "qty"]),
+          cbm: getColumnValue(["CBM", "cbm", "volume"]),
+          trackingNumber: getColumnValue(["tracking number", "tracking_number", "trackingnumber", "tracking"]),
         };
+        
+        console.log('Processed row:', processed);
+        return processed;
       });
 
+      console.log('Inserting data:', insertData.slice(0, 2));
       const result = await db.insert(trackingData).values(insertData).returning();
       res.json({ message: "CSV data uploaded successfully", count: result.length });
     } catch (error) {
