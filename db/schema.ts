@@ -36,6 +36,7 @@ export const trackingData = pgTable("tracking_data", {
   quantity: text("quantity"),
   cbm: text("cbm"),
   trackingNumber: text("tracking_number").notNull().unique(),
+  eta: text("eta"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -78,36 +78,36 @@ export default function TrackingAdmin() {
         try {
           const arrayBuffer = new Uint8Array(event.target?.result as ArrayBuffer);
           const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          
+
           // Get the first worksheet
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
-          
+
           // Convert to JSON
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
             header: 1,
             defval: '' 
           });
-          
+
           if (jsonData.length < 2) {
             resolve([]);
             return;
           }
-          
+
           // Convert array format to object format
           const headers = jsonData[0] as string[];
           const rows = jsonData.slice(1) as any[][];
-          
+
           const parsedData = rows.map(row => {
             const obj: any = {};
             headers.forEach((header, index) => {
               let value = row[index];
-              
+
               // Handle Excel date values
               if ((header.toLowerCase().includes('date') || 
                    header.toLowerCase().includes('received') || 
                    header.toLowerCase().includes('loaded')) && value) {
-                
+
                 if (typeof value === 'number' && value > 0 && value < 100000) {
                   // Excel serial date conversion (corrected formula)
                   const excelEpoch = new Date(1900, 0, 1);
@@ -123,14 +123,14 @@ export default function TrackingAdmin() {
                   }
                 }
               }
-              
+
               // Normalize header names for consistent mapping
               const normalizedHeader = header.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
               obj[normalizedHeader] = value ? String(value).trim() : '';
             });
             return obj;
           });
-          
+
           resolve(parsedData);
         } catch (error) {
           reject(error);
@@ -147,7 +147,7 @@ export default function TrackingAdmin() {
 
     const validExtensions = ['.xlsx', '.xls', '.ods'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    
+
     if (!validExtensions.includes(fileExtension)) {
       toast({
         title: "Error",
@@ -158,7 +158,7 @@ export default function TrackingAdmin() {
     }
 
     setCsvFile(file);
-    
+
     try {
       const parsed = await parseSpreadsheet(file);
       setCsvData(parsed);
@@ -192,15 +192,15 @@ export default function TrackingAdmin() {
 
   const validateColumns = (data: any[]) => {
     if (data.length === 0) return { valid: false, missing: expectedColumns };
-    
+
     const headers = Object.keys(data[0]);
     const normalizeColumnName = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-    
+
     const missing = expectedColumns.filter(col => {
       const normalizedExpected = normalizeColumnName(col);
       return !headers.some(h => normalizeColumnName(h) === normalizedExpected);
     });
-    
+
     return { valid: missing.length === 0, missing };
   };
 
@@ -231,7 +231,7 @@ export default function TrackingAdmin() {
               onChange={handleFileChange}
               className="cursor-pointer"
             />
-            
+
             {csvFile && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -298,32 +298,47 @@ export default function TrackingAdmin() {
             {isLoading ? (
               <div>Loading tracking data...</div>
             ) : trackingData?.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Shipping Mark</TableHead>
-                      <TableHead>Date Received</TableHead>
-                      <TableHead>Date Loaded</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>CBM</TableHead>
-                      <TableHead>Tracking Number</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {trackingData.map((item: any) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.shippingMark}</TableCell>
-                        <TableCell>{item.dateReceived || 'N/A'}</TableCell>
-                        <TableCell>{item.dateLoaded || 'N/A'}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.cbm}</TableCell>
-                        <TableCell className="font-mono text-sm">{item.trackingNumber}</TableCell>
+              <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tracking Number</TableHead>
+                        <TableHead>CBM</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Received</TableHead>
+                        <TableHead>Loaded</TableHead>
+                        <TableHead>ETA</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Shipping Mark</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {trackingData.map((item: any) => {
+                        const getStatus = () => {
+                          if (item.eta && new Date(item.eta) < new Date()) {
+                            return "Delivered";
+                          } else if (item.dateLoaded) {
+                            return "In Transit";
+                          } else if (item.dateReceived) {
+                            return "Processing";
+                          }
+                          return "Received";
+                        };
+
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-mono text-sm">{item.trackingNumber}</TableCell>
+                            <TableCell>{item.cbm}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{item.dateReceived || 'N/A'}</TableCell>
+                            <TableCell>{item.dateLoaded || 'N/A'}</TableCell>
+                            <TableCell>{item.eta || 'N/A'}</TableCell>
+                            <TableCell>{getStatus()}</TableCell>
+                            <TableCell>{item.shippingMark}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 No tracking data uploaded yet. Upload an Excel or Google Sheets file to get started.

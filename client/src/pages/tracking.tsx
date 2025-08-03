@@ -155,16 +155,20 @@ export default function Tracking() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Shipping Mark</dt>
-                    <dd className="mt-1 text-lg font-semibold text-gray-900">{trackingData.shippingMark || "N/A"}</dd>
+                    <dt className="text-sm font-medium text-gray-500">Tracking Number</dt>
+                    <dd className="mt-1 text-lg font-semibold text-gray-900 font-mono">{trackingData.trackingNumber}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Volume (CBM)</dt>
+                    <dd className="mt-1 text-lg text-gray-900">{trackingData.cbm || "N/A"}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Quantity</dt>
                     <dd className="mt-1 text-lg text-gray-900">{trackingData.quantity || "N/A"}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Volume (CBM)</dt>
-                    <dd className="mt-1 text-lg text-gray-900">{trackingData.cbm || "N/A"}</dd>
+                    <dt className="text-sm font-medium text-gray-500">Shipping Mark</dt>
+                    <dd className="mt-1 text-lg text-gray-900">{trackingData.shippingMark || "N/A"}</dd>
                   </div>
                 </CardContent>
               </Card>
