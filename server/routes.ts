@@ -190,17 +190,7 @@ export function registerRoutes(app: Express): Server {
         return "";
       };
 
-      // Check for duplicate tracking numbers in the upload data
-      const trackingNumbers = data.map(row => {
-        return getColumnValueHelper(row, ["TRACKING NUMBER", "tracking number", "trackingnumber"]);
-      });
-      
-      const duplicates = trackingNumbers.filter((item, index) => trackingNumbers.indexOf(item) !== index);
-      if (duplicates.length > 0) {
-        return res.status(400).json({ 
-          message: `Duplicate tracking numbers found in upload: ${duplicates.join(", ")}. Please ensure all tracking numbers are unique.`
-        });
-      }
+      // Duplicate tracking numbers are now allowed
 
       console.log('Processing upload data:', JSON.stringify(data.slice(0, 2), null, 2));
 
@@ -265,29 +255,49 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Track by tracking number (full or last 6 digits)
+  // Track by tracking number(s) - supports comma-separated list and returns all matches
   app.get("/api/tracking/:number", async (req, res) => {
     try {
       const { number } = req.params;
+      const trackingNumbers = number.split(',').map(n => n.trim()).filter(n => n.length > 0);
 
-      let result;
-      if (number.length === 6) {
-        // Search by last 6 digits
-        result = await db.query.trackingData.findFirst({
-          where: like(trackingData.trackingNumber, `%${number}`),
-        });
-      } else {
-        // Search by full tracking number
-        result = await db.query.trackingData.findFirst({
-          where: eq(trackingData.trackingNumber, number),
-        });
+      if (trackingNumbers.length === 0) {
+        return res.status(400).json({ message: "No valid tracking numbers provided" });
       }
 
-      if (!result) {
-        return res.status(404).json({ message: "Tracking number not found" });
+      let allResults = [];
+
+      for (const trackingNum of trackingNumbers) {
+        let results;
+        if (trackingNum.length === 6) {
+          // Search by last 6 digits - find all matches
+          results = await db.query.trackingData.findMany({
+            where: like(trackingData.trackingNumber, `%${trackingNum}`),
+            orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+          });
+        } else {
+          // Search by full tracking number - find all matches
+          results = await db.query.trackingData.findMany({
+            where: eq(trackingData.trackingNumber, trackingNum),
+            orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+          });
+        }
+
+        if (results && results.length > 0) {
+          allResults.push(...results);
+        }
       }
 
-      res.json(result);
+      if (allResults.length === 0) {
+        return res.status(404).json({ message: "No tracking numbers found" });
+      }
+
+      // Remove duplicates based on ID (in case same tracking number appears in multiple searches)
+      const uniqueResults = allResults.filter((item, index, arr) => 
+        arr.findIndex(t => t.id === item.id) === index
+      );
+
+      res.json(uniqueResults);
     } catch (error) {
       console.error("Failed to fetch tracking data:", error);
       res.status(500).json({ message: "Failed to fetch tracking data" });

@@ -22,7 +22,7 @@ type TrackingData = {
 
 export default function Tracking() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
+  const [trackingData, setTrackingData] = useState<TrackingData[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -32,10 +32,11 @@ export default function Tracking() {
 
     setIsSearching(true);
     setError(null);
-    setTrackingData(null);
+    setTrackingData([]);
 
     try {
-      const response = await fetch(`/api/tracking/${searchTerm.trim()}`);
+      const cleanedSearchTerm = searchTerm.trim().replace(/\s+/g, ','); // Replace spaces with commas
+      const response = await fetch(`/api/tracking/${cleanedSearchTerm}`);
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -47,7 +48,7 @@ export default function Tracking() {
       }
 
       const data = await response.json();
-      setTrackingData(data);
+      setTrackingData(Array.isArray(data) ? data : [data]);
     } catch (error) {
       setError("Unable to connect to tracking service. Please try again later.");
     } finally {
@@ -87,7 +88,7 @@ export default function Tracking() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Track Your Cargo</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Enter your full tracking number or just the last 6 digits to get real-time updates on your shipment
+            Enter tracking numbers (comma-separated for multiple) or just use the last 6 digits to get real-time updates
           </p>
         </div>
 
@@ -100,7 +101,7 @@ export default function Tracking() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     type="text"
-                    placeholder="Enter tracking number or last 6 digits"
+                    placeholder="Enter tracking numbers (comma-separated) or last 6 digits"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -111,7 +112,7 @@ export default function Tracking() {
                 </Button>
               </div>
               <p className="text-sm text-gray-500 text-center">
-                You can search using the full tracking number or just the last 6 digits
+                You can search using full tracking numbers, last 6 digits, or multiple numbers separated by commas
               </p>
             </form>
           </CardContent>
@@ -125,96 +126,110 @@ export default function Tracking() {
         )}
 
         {/* Tracking Results */}
-        {trackingData && (
+        {trackingData.length > 0 && (
           <div className="space-y-6">
-            {/* Status Header */}
-            <Card className="shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl mb-2">Tracking: {trackingData.trackingNumber}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getTrackingStatus(trackingData).color}>
-                        {getTrackingStatus(trackingData).status}
-                      </Badge>
+            {trackingData.map((data, index) => (
+              <div key={data.id} className="space-y-6">
+                {/* Status Header */}
+                <Card className="shadow-lg">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-2xl mb-2">
+                          Tracking: {data.trackingNumber}
+                          {trackingData.length > 1 && (
+                            <span className="text-lg text-gray-500 ml-2">({index + 1} of {trackingData.length})</span>
+                          )}
+                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getTrackingStatus(data).color}>
+                            {getTrackingStatus(data).status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Package className="h-12 w-12 text-blue-500" />
                     </div>
-                  </div>
-                  <Package className="h-12 w-12 text-blue-500" />
-                </div>
-              </CardHeader>
-            </Card>
+                  </CardHeader>
+                </Card>
 
-            {/* Shipment Details */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Ship className="h-5 w-5" />
-                    Shipment Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Tracking Number</dt>
-                    <dd className="mt-1 text-lg font-semibold text-gray-900 font-mono">{trackingData.trackingNumber}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Volume (CBM)</dt>
-                    <dd className="mt-1 text-lg text-gray-900">{trackingData.cbm || "N/A"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Quantity</dt>
-                    <dd className="mt-1 text-lg text-gray-900">{trackingData.quantity || "N/A"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Shipping Mark</dt>
-                    <dd className="mt-1 text-lg text-gray-900">{trackingData.shippingMark || "N/A"}</dd>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Shipment Details */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card className="shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Ship className="h-5 w-5" />
+                        Shipment Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Tracking Number</dt>
+                        <dd className="mt-1 text-lg font-semibold text-gray-900 font-mono">{data.trackingNumber}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Volume (CBM)</dt>
+                        <dd className="mt-1 text-lg text-gray-900">{data.cbm || "N/A"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Quantity</dt>
+                        <dd className="mt-1 text-lg text-gray-900">{data.quantity || "N/A"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Shipping Mark</dt>
+                        <dd className="mt-1 text-lg text-gray-900">{data.shippingMark || "N/A"}</dd>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Timeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {trackingData.dateReceived && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <div className="text-sm font-medium">Received</div>
-                          <div className="text-sm text-gray-500">{formatDate(trackingData.dateReceived)}</div>
-                        </div>
-                      </div>
-                    )}
-                    {trackingData.dateLoaded && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div>
-                          <div className="text-sm font-medium">Loaded</div>
-                          <div className="text-sm text-gray-500">{formatDate(trackingData.dateLoaded)}</div>
-                        </div>
-                      </div>
-                    )}
-                    {trackingData.eta && trackingData.eta.trim() !== '' && (
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${new Date(trackingData.eta) < new Date() ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-                        <div>
-                          <div className="text-sm font-medium">
-                            {new Date(trackingData.eta) < new Date() ? 'Delivered' : 'Expected Arrival'}
+                  <Card className="shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Timeline
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        {data.dateReceived && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div>
+                              <div className="text-sm font-medium">Received</div>
+                              <div className="text-sm text-gray-500">{formatDate(data.dateReceived)}</div>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">{formatDate(trackingData.eta)}</div>
-                        </div>
+                        )}
+                        {data.dateLoaded && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <div>
+                              <div className="text-sm font-medium">Loaded</div>
+                              <div className="text-sm text-gray-500">{formatDate(data.dateLoaded)}</div>
+                            </div>
+                          </div>
+                        )}
+                        {data.eta && data.eta.trim() !== '' && (
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${new Date(data.eta) < new Date() ? 'bg-green-500' : 'bg-orange-500'}`}></div>
+                            <div>
+                              <div className="text-sm font-medium">
+                                {new Date(data.eta) < new Date() ? 'Delivered' : 'Expected Arrival'}
+                              </div>
+                              <div className="text-sm text-gray-500">{formatDate(data.eta)}</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Separator between multiple results */}
+                {index < trackingData.length - 1 && (
+                  <div className="border-t border-gray-200 my-8"></div>
+                )}
+              </div>
+            ))}
 
             {/* Search Again */}
             <div className="text-center pt-6">
@@ -222,7 +237,7 @@ export default function Tracking() {
                 variant="outline" 
                 onClick={() => {
                   setSearchTerm("");
-                  setTrackingData(null);
+                  setTrackingData([]);
                   setError(null);
                 }}
               >
@@ -233,7 +248,7 @@ export default function Tracking() {
         )}
 
         {/* Help Section */}
-        {!trackingData && !error && (
+        {trackingData.length === 0 && !error && (
           <Card className="mt-12 shadow-lg">
             <CardHeader>
               <CardTitle>Need Help?</CardTitle>
