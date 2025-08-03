@@ -255,7 +255,7 @@ export default function Tracking() {
                 <div>
                   <h3 className="font-semibold mb-2">Tracking Number Format</h3>
                   <p className="text-gray-600">
-                    Your tracking number is usually provided when you ship your cargo. 
+                    Your tracking number is usually provided by your supplier. 
                     You can enter the full number or just the last 6 digits for convenience.
                   </p>
                 </div>
