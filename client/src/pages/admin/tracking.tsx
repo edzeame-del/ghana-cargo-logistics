@@ -194,9 +194,12 @@ export default function TrackingAdmin() {
     if (data.length === 0) return { valid: false, missing: expectedColumns };
     
     const headers = Object.keys(data[0]);
-    const missing = expectedColumns.filter(col => 
-      !headers.some(h => h.toLowerCase() === col.toLowerCase())
-    );
+    const normalizeColumnName = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    
+    const missing = expectedColumns.filter(col => {
+      const normalizedExpected = normalizeColumnName(col);
+      return !headers.some(h => normalizeColumnName(h) === normalizedExpected);
+    });
     
     return { valid: missing.length === 0, missing };
   };
