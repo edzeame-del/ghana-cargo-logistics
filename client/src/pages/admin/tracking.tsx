@@ -186,7 +186,8 @@ export default function TrackingAdmin() {
   };
 
   const expectedColumns = [
-    "TRACKING NUMBER", "CBM", "QUANTITY", "RECEIVED", "LOADED", "ETA", "SHIPPING MARK"
+    "shipping mark", "Date Received", "Date Loaded", 
+    "Quantity", "CBM", "tracking number", "ETA (optional)"
   ];
 
   const validateColumns = (data: any[]) => {

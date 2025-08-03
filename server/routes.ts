@@ -159,13 +159,13 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Upload CSV tracking data
+  // Upload spreadsheet tracking data
   app.post("/api/tracking/upload", async (req, res) => {
     try {
       const { data } = req.body;
 
       if (!Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ message: "Invalid CSV data format" });
+        return res.status(400).json({ message: "Invalid spreadsheet data format" });
       }
 
       // Clear existing data and insert new data
@@ -229,10 +229,10 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Inserting data:', insertData.slice(0, 2));
       const result = await db.insert(trackingData).values(insertData).returning();
-      res.json({ message: "CSV data uploaded successfully", count: result.length });
+      res.json({ message: "Spreadsheet data uploaded successfully", count: result.length });
     } catch (error) {
-      console.error("Failed to upload CSV data:", error);
-      res.status(500).json({ message: "Failed to upload CSV data" });
+      console.error("Failed to upload spreadsheet data:", error);
+      res.status(500).json({ message: "Failed to upload spreadsheet data" });
     }
   });
 
