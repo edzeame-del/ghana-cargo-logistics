@@ -47,6 +47,11 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 
 ## Recent Changes
 - **Date**: 2025-08-03
+- **Automatic Data Cleanup**: Implemented 90-day data retention policy
+  - Tracking data automatically deleted after 90 days from upload
+  - Scheduled cleanup runs every 24 hours
+  - Manual cleanup button in admin interface
+  - Server-side cleanup on startup
 - **Basic Authentication System**: Implemented secure admin authentication
   - Passport.js-based authentication with session management
   - Password hashing with scrypt and salt

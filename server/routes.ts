@@ -3,8 +3,33 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
-import { eq, like, or } from "drizzle-orm";
+import { eq, like, or, lt } from "drizzle-orm";
 import { setupAuth } from "./auth";
+
+// Cleanup function to delete tracking data older than 90 days
+async function cleanupOldTrackingData() {
+  try {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    
+    const result = await db
+      .delete(trackingData)
+      .where(lt(trackingData.createdAt, ninetyDaysAgo.toISOString()));
+    
+    const deletedCount = result.rowCount || 0;
+    if (deletedCount > 0) {
+      console.log(`Cleaned up ${deletedCount} tracking records older than 90 days`);
+    }
+  } catch (error) {
+    console.error("Error during tracking data cleanup:", error);
+  }
+}
+
+// Schedule cleanup to run every 24 hours
+setInterval(cleanupOldTrackingData, 24 * 60 * 60 * 1000);
+
+// Run cleanup on server start
+cleanupOldTrackingData();
 
 export function registerRoutes(app: Express): Server {
   // Setup authentication
@@ -317,6 +342,26 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Failed to fetch tracking data:", error);
       res.status(500).json({ message: "Failed to fetch tracking data" });
+    }
+  });
+
+  // Manual cleanup endpoint for admin (optional)
+  app.post("/api/tracking/cleanup", async (req, res) => {
+    try {
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      
+      const result = await db
+        .delete(trackingData)
+        .where(lt(trackingData.createdAt, ninetyDaysAgo.toISOString()));
+      
+      res.json({ 
+        message: "Cleanup completed successfully", 
+        deletedCount: result.rowCount || 0 
+      });
+    } catch (error) {
+      console.error("Manual cleanup failed:", error);
+      res.status(500).json({ message: "Cleanup failed" });
     }
   });
 

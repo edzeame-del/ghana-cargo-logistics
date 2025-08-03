@@ -21,6 +21,7 @@ import {
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AdminNav from "@/components/admin/admin-nav";
+import CleanupButton from "@/components/admin/cleanup-button";
 import * as XLSX from 'xlsx';
 
 export default function TrackingAdmin() {
@@ -289,10 +290,15 @@ export default function TrackingAdmin() {
         {/* Current Data */}
         <Card>
           <CardHeader>
-            <CardTitle>Current Tracking Data</CardTitle>
-            <CardDescription>
-              {trackingData?.length || 0} tracking records in the system
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Current Tracking Data</CardTitle>
+                <CardDescription>
+                  {trackingData?.length || 0} tracking records in the system
+                </CardDescription>
+              </div>
+              <CleanupButton onCleanupComplete={() => queryClient.invalidateQueries({ queryKey: ['tracking-data'] })} />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
