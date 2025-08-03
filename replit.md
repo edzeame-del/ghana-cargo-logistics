@@ -58,6 +58,7 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - Protected admin routes requiring login
   - Admin login/logout functionality at `/auth`
   - MemoryStore session storage for development
+  - **SECURITY**: Public registration disabled - only existing admins can access
 - **Duplicate Tracking Numbers**: Removed unique constraint to allow duplicate tracking numbers
   - Multiple shipments with same tracking number now supported
   - Search returns all matching entries with clear numbering

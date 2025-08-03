@@ -9,8 +9,7 @@ import { Redirect } from "wouter";
 import { Ship, Shield } from "lucide-react";
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const { user, loginMutation } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -22,16 +21,11 @@ export default function AuthPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) return;
-
-    if (isLogin) {
-      loginMutation.mutate({ username, password });
-    } else {
-      registerMutation.mutate({ username, password });
-    }
+    loginMutation.mutate({ username, password });
   };
 
-  const isLoading = loginMutation.isPending || registerMutation.isPending;
-  const error = loginMutation.error || registerMutation.error;
+  const isLoading = loginMutation.isPending;
+  const error = loginMutation.error;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -59,7 +53,7 @@ export default function AuthPage() {
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle className="text-center">
-              {isLogin ? "Admin Login" : "Create Admin Account"}
+              Admin Login
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -100,21 +94,11 @@ export default function AuthPage() {
                 className="w-full" 
                 disabled={isLoading}
               >
-                {isLoading ? "Please wait..." : (isLogin ? "Login" : "Create Account")}
+                {isLoading ? "Please wait..." : "Login"}
               </Button>
 
-              <div className="text-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setUsername("");
-                    setPassword("");
-                  }}
-                >
-                  {isLogin ? "Need an account? Register" : "Already have an account? Login"}
-                </Button>
+              <div className="text-center text-sm text-gray-500 mt-4">
+                <p>Contact your administrator for account access</p>
               </div>
             </form>
           </CardContent>

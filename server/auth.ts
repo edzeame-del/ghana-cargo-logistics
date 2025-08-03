@@ -75,33 +75,10 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    try {
-      const result = insertUserSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid input data" });
-      }
-
-      const [existingUser] = await getUserByUsername(result.data.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      const [user] = await db
-        .insert(users)
-        .values({
-          ...result.data,
-          password: await hashPassword(result.data.password),
-        })
-        .returning();
-
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
+    // Disable public registration for security
+    return res.status(403).json({ 
+      message: "Registration is disabled. Contact administrator for access." 
+    });
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {

@@ -14,7 +14,7 @@ async function cleanupOldTrackingData() {
     
     const result = await db
       .delete(trackingData)
-      .where(lt(trackingData.createdAt, ninetyDaysAgo.toISOString()));
+      .where(lt(trackingData.createdAt, ninetyDaysAgo));
     
     const deletedCount = result.rowCount || 0;
     if (deletedCount > 0) {
@@ -353,7 +353,7 @@ export function registerRoutes(app: Express): Server {
       
       const result = await db
         .delete(trackingData)
-        .where(lt(trackingData.createdAt, ninetyDaysAgo.toISOString()));
+        .where(lt(trackingData.createdAt, ninetyDaysAgo));
       
       res.json({ 
         message: "Cleanup completed successfully", 
