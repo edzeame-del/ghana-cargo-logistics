@@ -167,7 +167,7 @@ export default function VesselsAdmin() {
     }
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>, isEditing = false) => {
     const url = e.target.value;
     if (url.includes('marinetraffic.com')) {
       extractVesselInfo(url);
@@ -186,37 +186,39 @@ export default function VesselsAdmin() {
     }
   };
 
-  const VesselForm = ({ data, onChange, onSubmit, submitText }: any) => (
+  const VesselForm = ({ data, onChange, onSubmit, submitText, isEditing = false }: any) => (
     <form onSubmit={onSubmit} className="space-y-4">
       <Input
         placeholder="MarineTraffic URL"
-        value={data.trackingUrl}
+        value={data.trackingUrl || ""}
         onChange={(e) => {
           onChange({ ...data, trackingUrl: e.target.value });
-          handleUrlChange(e);
+          if (!isEditing) {
+            handleUrlChange(e);
+          }
         }}
       />
       <Input
         placeholder="Vessel Name"
-        value={data.name}
+        value={data.name || ""}
         onChange={(e) => onChange({ ...data, name: e.target.value })}
       />
       <Input
         placeholder="IMO Number"
-        value={data.imo}
+        value={data.imo || ""}
         onChange={(e) => onChange({ ...data, imo: e.target.value })}
       />
       <Input
         placeholder="MMSI Number"
-        value={data.mmsi}
+        value={data.mmsi || ""}
         onChange={(e) => onChange({ ...data, mmsi: e.target.value })}
       />
       <Input
         placeholder="Thumbnail URL"
-        value={data.thumbnailUrl}
+        value={data.thumbnailUrl || ""}
         onChange={(e) => onChange({ ...data, thumbnailUrl: e.target.value })}
       />
-      <Button type="submit">
+      <Button type="submit" disabled={!data.name || !data.imo || !data.mmsi}>
         {submitText}
       </Button>
     </form>
@@ -264,9 +266,15 @@ export default function VesselsAdmin() {
                         View Tracking
                       </Button>
 
-                      <Dialog>
+                      <Dialog onOpenChange={(open) => {
+                        if (open) {
+                          setEditingVessel({ ...vessel });
+                        } else {
+                          setEditingVessel(null);
+                        }
+                      }}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="icon" onClick={() => setEditingVessel(vessel)}>
+                          <Button variant="outline" size="icon">
                             <Edit2 className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
@@ -277,12 +285,15 @@ export default function VesselsAdmin() {
                               Update the vessel information below
                             </DialogDescription>
                           </DialogHeader>
-                          <VesselForm
-                            data={editingVessel || vessel}
-                            onChange={setEditingVessel}
-                            onSubmit={handleUpdate}
-                            submitText={updateVesselMutation.isPending ? "Updating..." : "Update Vessel"}
-                          />
+                          {editingVessel && (
+                            <VesselForm
+                              data={editingVessel}
+                              onChange={setEditingVessel}
+                              onSubmit={handleUpdate}
+                              submitText={updateVesselMutation.isPending ? "Updating..." : "Update Vessel"}
+                              isEditing={true}
+                            />
+                          )}
                         </DialogContent>
                       </Dialog>
 
