@@ -172,13 +172,41 @@ export function registerRoutes(app: Express): Server {
       await db.delete(trackingData);
       
       const insertData = data.map(row => {
-        const dateReceived = row["Date Received"] || row["date_received"] || "";
-        const dateLoaded = row["Date Loaded"] || row["date_loaded"] || "";
+        let dateReceived = row["Date Received"] || row["date_received"] || "";
+        let dateLoaded = row["Date Loaded"] || row["date_loaded"] || "";
+        
+        // Process dates similar to frontend logic
+        const processDate = (dateValue: any) => {
+          if (!dateValue) return "";
+          
+          // If it's already a formatted date string (YYYY-MM-DD), return as is
+          if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue.trim())) {
+            return dateValue.trim();
+          }
+          
+          // Handle Excel date serial numbers
+          if (typeof dateValue === 'number' && dateValue > 0) {
+            const jsDate = new Date((dateValue - 25569) * 86400 * 1000);
+            if (!isNaN(jsDate.getTime())) {
+              return jsDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+            }
+          }
+          
+          // Try to parse as date string
+          if (typeof dateValue === 'string' && dateValue.trim()) {
+            const parsedDate = new Date(dateValue.trim());
+            if (!isNaN(parsedDate.getTime())) {
+              return parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+            }
+          }
+          
+          return dateValue ? dateValue.toString().trim() : "";
+        };
         
         return {
           shippingMark: row["shipping mark"] || row["shipping_mark"] || "",
-          dateReceived: dateReceived.toString().trim(),
-          dateLoaded: dateLoaded.toString().trim(), 
+          dateReceived: processDate(dateReceived),
+          dateLoaded: processDate(dateLoaded),
           quantity: row["Quantity"] || row["quantity"] || "",
           cbm: row["CBM"] || row["cbm"] || "",
           trackingNumber: row["tracking number"] || row["tracking_number"] || "",
