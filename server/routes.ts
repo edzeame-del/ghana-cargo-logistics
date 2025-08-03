@@ -170,31 +170,43 @@ export function registerRoutes(app: Express): Server {
 
       // Clear existing data and insert new data
       await db.delete(trackingData);
+      
+      // Helper function for column value extraction (defined before use)
+      const getColumnValueHelper = (row: any, variations: string[]) => {
+        for (const variation of variations) {
+          if (row[variation] !== undefined && row[variation] !== '') {
+            return row[variation];
+          }
+          const key = Object.keys(row).find(k => k.toLowerCase() === variation.toLowerCase());
+          if (key && row[key] !== undefined && row[key] !== '') {
+            return row[key];
+          }
+          const normalizedVariation = variation.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normalizedKey = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedVariation);
+          if (normalizedKey && row[normalizedKey] !== undefined && row[normalizedKey] !== '') {
+            return row[normalizedKey];
+          }
+        }
+        return "";
+      };
+
+      // Check for duplicate tracking numbers in the upload data
+      const trackingNumbers = data.map(row => {
+        return getColumnValueHelper(row, ["TRACKING NUMBER", "tracking number", "trackingnumber"]);
+      });
+      
+      const duplicates = trackingNumbers.filter((item, index) => trackingNumbers.indexOf(item) !== index);
+      if (duplicates.length > 0) {
+        return res.status(400).json({ 
+          message: `Duplicate tracking numbers found in upload: ${duplicates.join(", ")}. Please ensure all tracking numbers are unique.`
+        });
+      }
 
       console.log('Processing upload data:', JSON.stringify(data.slice(0, 2), null, 2));
 
+
+
       const insertData = data.map(row => {
-        // Handle column names - check direct match first, then variations
-        const getColumnValue = (variations: string[]) => {
-          for (const variation of variations) {
-            // Direct match first
-            if (row[variation] !== undefined && row[variation] !== '') {
-              return row[variation];
-            }
-            // Check case-insensitive match
-            const key = Object.keys(row).find(k => k.toLowerCase() === variation.toLowerCase());
-            if (key && row[key] !== undefined && row[key] !== '') {
-              return row[key];
-            }
-            // Check normalized version (no spaces/special chars)
-            const normalizedVariation = variation.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const normalizedKey = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedVariation);
-            if (normalizedKey && row[normalizedKey] !== undefined && row[normalizedKey] !== '') {
-              return row[normalizedKey];
-            }
-          }
-          return "";
-        };
 
         const processDate = (dateValue: any) => {
           if (!dateValue) return "";
@@ -204,11 +216,15 @@ export function registerRoutes(app: Express): Server {
             return dateValue.trim();
           }
 
-          // Handle Excel date serial numbers
-          if (typeof dateValue === 'number' && dateValue > 0) {
-            const jsDate = new Date((dateValue - 25569) * 86400 * 1000);
-            if (!isNaN(jsDate.getTime())) {
-              return jsDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          // Handle Excel date serial numbers (Excel uses 1900-01-01 as day 1)
+          if (typeof dateValue === 'number' && dateValue > 1 && dateValue < 100000) {
+            // Excel date serial number conversion - Excel counts days since Jan 1, 1900
+            const jsDate = new Date(1900, 0, dateValue - 1); // -1 because Excel counts from 1, JS from 0
+            if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900) {
+              const year = jsDate.getFullYear();
+              const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+              const day = String(jsDate.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
             }
           }
 
@@ -224,14 +240,14 @@ export function registerRoutes(app: Express): Server {
         };
 
         return {
-          shippingMark: getColumnValue(["SHIPPING MARK", "shipping mark", "shippingmark"]),
-          dateReceived: processDate(getColumnValue(["RECEIVED", "Date Received", "datereceived", "received"])),
-          dateLoaded: processDate(getColumnValue(["LOADED", "Date Loaded", "dateloaded", "loaded"])),
-          quantity: getColumnValue(["QUANTITY", "Quantity", "quantity"]),
-          cbm: getColumnValue(["CBM", "cbm"]),
-          trackingNumber: getColumnValue(["TRACKING NUMBER", "tracking number", "trackingnumber"]),
-          eta: processDate(getColumnValue(["ETA", "eta"])),
-          status: getColumnValue(["STATUS", "status"]),
+          shippingMark: getColumnValueHelper(row, ["SHIPPING MARK", "shipping mark", "shippingmark"]),
+          dateReceived: processDate(getColumnValueHelper(row, ["RECEIVED", "Date Received", "datereceived", "received"])),
+          dateLoaded: processDate(getColumnValueHelper(row, ["LOADED", "Date Loaded", "dateloaded", "loaded"])),
+          quantity: getColumnValueHelper(row, ["QUANTITY", "Quantity", "quantity"]),
+          cbm: getColumnValueHelper(row, ["CBM", "cbm"]),
+          trackingNumber: getColumnValueHelper(row, ["TRACKING NUMBER", "tracking number", "trackingnumber"]),
+          eta: processDate(getColumnValueHelper(row, ["ETA", "eta"])),
+          status: getColumnValueHelper(row, ["STATUS", "status"]),
         };
       });
 
