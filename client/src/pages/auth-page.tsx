@@ -40,7 +40,7 @@ export default function AuthPage() {
         <div className="text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start mb-6">
             <Ship className="h-12 w-12 text-blue-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-900">Ghana Cargo Admin</h1>
+            <h1 className="text-3xl font-bold text-gray-900">MSG Back Office</h1>
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Secure Admin Access
