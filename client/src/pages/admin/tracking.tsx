@@ -21,6 +21,7 @@ import {
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AdminNav from "@/components/admin/admin-nav";
+import * as XLSX from 'xlsx';
 
 export default function TrackingAdmin() {
   const { toast } = useToast();
@@ -70,45 +71,81 @@ export default function TrackingAdmin() {
     },
   });
 
-  const parseCSV = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
-
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const data = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
-      });
-      return row;
+  const parseSpreadsheet = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const arrayBuffer = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          
+          // Get the first worksheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            defval: '' 
+          });
+          
+          if (jsonData.length < 2) {
+            resolve([]);
+            return;
+          }
+          
+          // Convert array format to object format
+          const headers = jsonData[0] as string[];
+          const rows = jsonData.slice(1) as any[][];
+          
+          const parsedData = rows.map(row => {
+            const obj: any = {};
+            headers.forEach((header, index) => {
+              obj[header] = row[index] || '';
+            });
+            return obj;
+          });
+          
+          resolve(parsedData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
     });
-
-    return data;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.csv')) {
+    const validExtensions = ['.xlsx', '.xls', '.ods'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!validExtensions.includes(fileExtension)) {
       toast({
         title: "Error",
-        description: "Please select a CSV file",
+        description: "Please select an Excel file (.xlsx, .xls) or OpenDocument Spreadsheet (.ods)",
         variant: "destructive",
       });
       return;
     }
 
     setCsvFile(file);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const parsed = parseCSV(text);
+    
+    try {
+      const parsed = await parseSpreadsheet(file);
       setCsvData(parsed);
       setPreview(parsed.slice(0, 5)); // Show first 5 rows as preview
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to parse spreadsheet file. Please check the file format.",
+        variant: "destructive",
+      });
+      setCsvFile(null);
+    }
   };
 
   const handleUpload = () => {
@@ -153,16 +190,16 @@ export default function TrackingAdmin() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
-              Upload CSV Data
+              Upload Spreadsheet Data
             </CardTitle>
             <CardDescription>
-              Upload a CSV file with tracking information. Expected columns (in order): {expectedColumns.join(", ")}
+              Upload an Excel or Google Sheets file with tracking information. Expected columns (in order): {expectedColumns.join(", ")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
               type="file"
-              accept=".csv"
+              accept=".xlsx,.xls,.ods"
               onChange={handleFileChange}
               className="cursor-pointer"
             />
@@ -261,7 +298,7 @@ export default function TrackingAdmin() {
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                No tracking data uploaded yet. Upload a CSV file to get started.
+                No tracking data uploaded yet. Upload an Excel or Google Sheets file to get started.
               </div>
             )}
           </CardContent>

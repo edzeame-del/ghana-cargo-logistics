@@ -47,8 +47,9 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 
 ## Recent Changes
 - **Date**: 2025-08-03
-- **CSV Tracking System**: Implemented comprehensive CSV-based cargo tracking system
-  - Admin CSV upload with validation and preview at `/admin/tracking`
+- **Spreadsheet Tracking System**: Implemented comprehensive Excel/Google Sheets-based cargo tracking system
+  - Admin Excel/Google Sheets upload with validation and preview at `/admin/tracking`
+  - Support for .xlsx, .xls, and .ods file formats
   - Client tracking search at `/tracking` (full number or last 6 digits)
   - Database schema for tracking data with columns: shipping mark, Date Received, Date Loaded, Quantity, CBM, tracking number
   - Real-time status tracking and timeline display
@@ -71,7 +72,7 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 - ✅ Vessel management system fully functional
 - ✅ Admin CRUD operations working
 - ✅ MarineTraffic URL integration active  
-- ✅ CSV-based tracking system implemented
-- ✅ Admin CSV upload with validation and preview
+- ✅ Excel/Google Sheets-based tracking system implemented
+- ✅ Admin spreadsheet upload with validation and preview (.xlsx, .xls, .ods)
 - ✅ Client tracking with full/6-digit search capability
 - ✅ Real-time tracking status and timeline display
