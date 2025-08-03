@@ -223,6 +223,8 @@ export default function TrackingAdmin() {
             </CardTitle>
             <CardDescription>
               Upload an Excel or Google Sheets file with tracking information. Expected columns (in order): {expectedColumns.join(", ")}
+              <br />
+              <span className="text-sm text-gray-500">Maximum file size: 10MB</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
