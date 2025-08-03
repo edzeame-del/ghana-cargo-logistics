@@ -51,15 +51,16 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - Admin Excel/Google Sheets upload with validation and preview at `/admin/tracking`
   - Support for .xlsx, .xls, and .ods file formats
   - Client tracking search at `/tracking` (full number or last 6 digits)
-  - Database schema for tracking data with columns: shipping mark, Date Received, Date Loaded, Quantity, CBM, tracking number
+  - Database schema for tracking data with columns: TRACKING NUMBER, CBM, QUANTITY, RECEIVED, LOADED, ETA, STATUS, SHIPPING MARK
   - Real-time status tracking and timeline display
+  - STATUS column visible only in admin interface, hidden from client tracking
 - **Vessel Editing**: Fixed vessel editing functionality with proper dialog state management
 - **Admin Navigation**: Added navigation between vessels and tracking data management
 
 ## User Preferences
 - Prefers clean, modern UI design
 - Wants comprehensive functionality with real-time features
-- CSV column order preference: shipping mark, Date Received, Date Loaded, Quantity, CBM, tracking number
+- Excel column order preference: TRACKING NUMBER, CBM, QUANTITY, RECEIVED, LOADED, ETA, STATUS, SHIPPING MARK
 - Favors practical solutions over complex implementations
 
 ## Development Notes

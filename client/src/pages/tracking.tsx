@@ -200,7 +200,7 @@ export default function Tracking() {
                         </div>
                       </div>
                     )}
-                    {trackingData.eta && (
+                    {trackingData.eta && trackingData.eta.trim() !== '' && (
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${new Date(trackingData.eta) < new Date() ? 'bg-green-500' : 'bg-orange-500'}`}></div>
                         <div>

@@ -174,16 +174,23 @@ export function registerRoutes(app: Express): Server {
       console.log('Processing upload data:', JSON.stringify(data.slice(0, 2), null, 2));
 
       const insertData = data.map(row => {
-        // Handle normalized column names from frontend
+        // Handle column names - check direct match first, then variations
         const getColumnValue = (variations: string[]) => {
           for (const variation of variations) {
-            const normalized = variation.toLowerCase().replace(/[^a-z0-9]/g, '');
-            if (row[normalized] !== undefined && row[normalized] !== '') {
-              return row[normalized];
-            }
-            // Also check original column names for backward compatibility
+            // Direct match first
             if (row[variation] !== undefined && row[variation] !== '') {
               return row[variation];
+            }
+            // Check case-insensitive match
+            const key = Object.keys(row).find(k => k.toLowerCase() === variation.toLowerCase());
+            if (key && row[key] !== undefined && row[key] !== '') {
+              return row[key];
+            }
+            // Check normalized version (no spaces/special chars)
+            const normalizedVariation = variation.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normalizedKey = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedVariation);
+            if (normalizedKey && row[normalizedKey] !== undefined && row[normalizedKey] !== '') {
+              return row[normalizedKey];
             }
           }
           return "";
@@ -217,13 +224,14 @@ export function registerRoutes(app: Express): Server {
         };
 
         return {
-          shippingMark: getColumnValue(["shipping mark", "shippingmark"]),
-          dateReceived: processDate(getColumnValue(["Date Received", "datereceived", "received"])),
-          dateLoaded: processDate(getColumnValue(["Date Loaded", "dateloaded", "loaded"])),
-          quantity: getColumnValue(["Quantity", "quantity"]),
+          shippingMark: getColumnValue(["SHIPPING MARK", "shipping mark", "shippingmark"]),
+          dateReceived: processDate(getColumnValue(["RECEIVED", "Date Received", "datereceived", "received"])),
+          dateLoaded: processDate(getColumnValue(["LOADED", "Date Loaded", "dateloaded", "loaded"])),
+          quantity: getColumnValue(["QUANTITY", "Quantity", "quantity"]),
           cbm: getColumnValue(["CBM", "cbm"]),
-          trackingNumber: getColumnValue(["tracking number", "trackingnumber"]),
+          trackingNumber: getColumnValue(["TRACKING NUMBER", "tracking number", "trackingnumber"]),
           eta: processDate(getColumnValue(["ETA", "eta"])),
+          status: getColumnValue(["STATUS", "status"]),
         };
       });
 

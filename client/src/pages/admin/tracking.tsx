@@ -186,8 +186,7 @@ export default function TrackingAdmin() {
   };
 
   const expectedColumns = [
-    "shipping mark", "Date Received", "Date Loaded", 
-    "Quantity", "CBM", "tracking number", "ETA (optional)"
+    "TRACKING NUMBER", "CBM", "QUANTITY", "RECEIVED", "LOADED", "ETA (optional)", "STATUS (optional)", "SHIPPING MARK"
   ];
 
   const validateColumns = (data: any[]) => {
@@ -331,8 +330,8 @@ export default function TrackingAdmin() {
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell>{item.dateReceived || 'N/A'}</TableCell>
                             <TableCell>{item.dateLoaded || 'N/A'}</TableCell>
-                            <TableCell>{item.eta || 'N/A'}</TableCell>
-                            <TableCell>{getStatus()}</TableCell>
+                            <TableCell>{item.eta && item.eta.trim() !== '' ? item.eta : 'N/A'}</TableCell>
+                            <TableCell>{item.status || getStatus()}</TableCell>
                             <TableCell>{item.shippingMark}</TableCell>
                           </TableRow>
                         );
