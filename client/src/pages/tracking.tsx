@@ -88,7 +88,7 @@ export default function Tracking() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Track Your Shipment</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Enter tracking numbers (comma-separated for multiple) or just use the last 6 digits to get real-time updates
+            Enter your full tracking number(s) or the last 6 digits of your tracking number(s).
           </p>
         </div>
 
