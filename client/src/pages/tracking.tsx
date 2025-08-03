@@ -263,7 +263,7 @@ export default function Tracking() {
                   <h3 className="font-semibold mb-2">Having Issues?</h3>
                   <p className="text-gray-600">
                     If you can't find your tracking information, please contact our customer 
-                    service team with your shipping reference.
+                    service team with your shipping mark and a stamped copy of your courier label.
                   </p>
                 </div>
               </div>
