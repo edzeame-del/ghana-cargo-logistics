@@ -218,9 +218,13 @@ export function registerRoutes(app: Express): Server {
 
           // Handle Excel date serial numbers (Excel uses 1900-01-01 as day 1)
           if (typeof dateValue === 'number' && dateValue > 1 && dateValue < 100000) {
-            // Excel date serial number conversion - Excel counts days since Jan 1, 1900
-            const jsDate = new Date(1900, 0, dateValue - 1); // -1 because Excel counts from 1, JS from 0
-            if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900) {
+            // Excel date serial number conversion
+            // Excel's epoch: January 1, 1900 is day 1
+            // JavaScript Date constructor uses milliseconds since January 1, 1970
+            const excelEpoch = new Date(1899, 11, 30); // December 30, 1899 (day 0 in Excel)
+            const jsDate = new Date(excelEpoch.getTime() + (dateValue * 24 * 60 * 60 * 1000));
+            
+            if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 3000) {
               const year = jsDate.getFullYear();
               const month = String(jsDate.getMonth() + 1).padStart(2, '0');
               const day = String(jsDate.getDate()).padStart(2, '0');
