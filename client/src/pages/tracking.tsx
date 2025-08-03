@@ -86,7 +86,7 @@ export default function Tracking() {
     <div className="py-16 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Track Your Cargo</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Track Your Shipment</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Enter tracking numbers (comma-separated for multiple) or just use the last 6 digits to get real-time updates
           </p>
