@@ -177,30 +177,58 @@ export function registerRoutes(app: Express): Server {
         
         // Process dates similar to frontend logic
         const processDate = (dateValue: any) => {
-          if (!dateValue) return "";
+          if (!dateValue || dateValue === '' || dateValue === null || dateValue === undefined) {
+            return null; // Return null instead of empty string for better database handling
+          }
           
           // If it's already a formatted date string (YYYY-MM-DD), return as is
           if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue.trim())) {
             return dateValue.trim();
           }
           
-          // Handle Excel date serial numbers
-          if (typeof dateValue === 'number' && dateValue > 0) {
-            const jsDate = new Date((dateValue - 25569) * 86400 * 1000);
-            if (!isNaN(jsDate.getTime())) {
+          // Handle Excel date serial numbers (Excel dates start from 1900-01-01 as day 1)
+          if (typeof dateValue === 'number' && dateValue > 0 && dateValue < 100000) {
+            // Excel serial date conversion
+            const excelEpoch = new Date(1900, 0, 1); // January 1, 1900
+            const jsDate = new Date(excelEpoch.getTime() + (dateValue - 1) * 24 * 60 * 60 * 1000);
+            if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 2100) {
               return jsDate.toISOString().split('T')[0]; // YYYY-MM-DD format
             }
           }
           
           // Try to parse as date string
           if (typeof dateValue === 'string' && dateValue.trim()) {
-            const parsedDate = new Date(dateValue.trim());
-            if (!isNaN(parsedDate.getTime())) {
+            const trimmed = dateValue.trim();
+            
+            // Handle common date formats
+            let parsedDate: Date | null = null;
+            
+            // Try MM/DD/YYYY format
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+              parsedDate = new Date(trimmed);
+            }
+            // Try DD/MM/YYYY format
+            else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+              const parts = trimmed.split('/');
+              parsedDate = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+            }
+            // Try YYYY-MM-DD format
+            else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(trimmed)) {
+              parsedDate = new Date(trimmed);
+            }
+            // Try other standard formats
+            else {
+              parsedDate = new Date(trimmed);
+            }
+            
+            if (parsedDate && !isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 1900 && parsedDate.getFullYear() < 2100) {
               return parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
             }
           }
           
-          return dateValue ? dateValue.toString().trim() : "";
+          // If all else fails, return the original value as string (for debugging)
+          console.log('Could not parse date:', dateValue);
+          return null;
         };
         
         return {

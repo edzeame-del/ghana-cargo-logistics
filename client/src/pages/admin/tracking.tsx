@@ -308,8 +308,8 @@ export default function TrackingAdmin() {
                     {trackingData.map((item: any) => (
                       <TableRow key={item.id}>
                         <TableCell>{item.shippingMark}</TableCell>
-                        <TableCell>{item.dateReceived}</TableCell>
-                        <TableCell>{item.dateLoaded}</TableCell>
+                        <TableCell>{item.dateReceived || 'N/A'}</TableCell>
+                        <TableCell>{item.dateLoaded || 'N/A'}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>{item.cbm}</TableCell>
                         <TableCell className="font-mono text-sm">{item.trackingNumber}</TableCell>

@@ -55,18 +55,18 @@ export default function Tracking() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr || dateStr.trim() === '') return "N/A";
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr || dateStr.trim() === '' || dateStr === 'null') return "N/A";
     try {
       const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
+      if (isNaN(date.getTime())) return "N/A";
       return date.toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'short', 
         day: 'numeric' 
       });
     } catch {
-      return dateStr;
+      return "N/A";
     }
   };
 
