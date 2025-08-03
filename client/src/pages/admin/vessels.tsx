@@ -30,6 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Trash2, Edit2 } from "lucide-react";
+import AdminNav from "@/components/admin/admin-nav";
 
 export default function VesselsAdmin() {
   const { toast } = useToast();
@@ -225,8 +226,10 @@ export default function VesselsAdmin() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Manage Vessels</h1>
+    <div>
+      <AdminNav />
+      <div className="max-w-4xl mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-8">Manage Vessels</h1>
 
       <Card className="mb-8">
         <CardHeader>
@@ -328,6 +331,7 @@ export default function VesselsAdmin() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

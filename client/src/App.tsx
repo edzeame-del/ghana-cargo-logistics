@@ -11,6 +11,7 @@ import Contact from "@/pages/contact";
 import Terms from "@/pages/terms";
 import Tracking from "@/pages/tracking";
 import VesselsAdmin from "@/pages/admin/vessels";
+import TrackingAdmin from "@/pages/admin/tracking";
 import NotFound from "@/pages/not-found";
 import WhatsAppButton from "@/components/whatsapp-button";
 
@@ -28,6 +29,7 @@ function App() {
               <Route path="/terms" component={Terms} />
               <Route path="/tracking" component={Tracking} />
               <Route path="/admin/vessels" component={VesselsAdmin} />
+              <Route path="/admin/tracking" component={TrackingAdmin} />
               <Route component={NotFound} />
             </Switch>
           </main>

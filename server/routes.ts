@@ -2,8 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
-import { vessels, insertVesselSchema } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
+import { eq, like, or } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
   // Contact form submission
@@ -156,6 +156,78 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Failed to fetch vessel:", error);
       res.status(500).json({ message: "Failed to fetch vessel" });
+    }
+  });
+
+  // Upload CSV tracking data
+  app.post("/api/tracking/upload", async (req, res) => {
+    try {
+      const { data } = req.body;
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "Invalid CSV data format" });
+      }
+
+      // Clear existing data and insert new data
+      await db.delete(trackingData);
+      
+      const insertData = data.map(row => ({
+        trackingNumber: row["Tracking number"] || row["tracking_number"] || "",
+        shippingMark: row["shipping mark"] || row["shipping_mark"] || "",
+        dateReceived: row["Date Received"] || row["date_received"] || "",
+        dateLoaded: row["Date Loaded"] || row["date_loaded"] || "",
+        quantity: row["Quantity"] || row["quantity"] || "",
+        cbm: row["CBM"] || row["cbm"] || "",
+        eta: row["ETA"] || row["eta"] || "",
+      }));
+
+      const result = await db.insert(trackingData).values(insertData).returning();
+      res.json({ message: "CSV data uploaded successfully", count: result.length });
+    } catch (error) {
+      console.error("Failed to upload CSV data:", error);
+      res.status(500).json({ message: "Failed to upload CSV data" });
+    }
+  });
+
+  // Track by tracking number (full or last 6 digits)
+  app.get("/api/tracking/:number", async (req, res) => {
+    try {
+      const { number } = req.params;
+      
+      let result;
+      if (number.length === 6) {
+        // Search by last 6 digits
+        result = await db.query.trackingData.findFirst({
+          where: like(trackingData.trackingNumber, `%${number}`),
+        });
+      } else {
+        // Search by full tracking number
+        result = await db.query.trackingData.findFirst({
+          where: eq(trackingData.trackingNumber, number),
+        });
+      }
+
+      if (!result) {
+        return res.status(404).json({ message: "Tracking number not found" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch tracking data:", error);
+      res.status(500).json({ message: "Failed to fetch tracking data" });
+    }
+  });
+
+  // Get all tracking data (for admin)
+  app.get("/api/tracking", async (req, res) => {
+    try {
+      const allData = await db.query.trackingData.findMany({
+        orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+      });
+      res.json(allData);
+    } catch (error) {
+      console.error("Failed to fetch tracking data:", error);
+      res.status(500).json({ message: "Failed to fetch tracking data" });
     }
   });
 

@@ -27,3 +27,21 @@ export const insertVesselSchema = createInsertSchema(vessels);
 export const selectVesselSchema = createSelectSchema(vessels);
 export type InsertVessel = typeof vessels.$inferInsert;
 export type SelectVessel = typeof vessels.$inferSelect;
+
+export const trackingData = pgTable("tracking_data", {
+  id: serial("id").primaryKey(),
+  trackingNumber: text("tracking_number").notNull().unique(),
+  shippingMark: text("shipping_mark").notNull(),
+  dateReceived: text("date_received"),
+  dateLoaded: text("date_loaded"),
+  quantity: text("quantity"),
+  cbm: text("cbm"),
+  eta: text("eta"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTrackingDataSchema = createInsertSchema(trackingData);
+export const selectTrackingDataSchema = createSelectSchema(trackingData);
+export type InsertTrackingData = typeof trackingData.$inferInsert;
+export type SelectTrackingData = typeof trackingData.$inferSelect;
