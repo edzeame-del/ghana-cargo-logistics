@@ -216,13 +216,14 @@ export function registerRoutes(app: Express): Server {
             return dateValue.trim();
           }
 
-          // Handle Excel date serial numbers (Excel uses 1900-01-01 as day 1)
-          if (typeof dateValue === 'number' && dateValue > 1 && dateValue < 100000) {
+          // Handle Excel date serial numbers - convert string numbers too
+          const numericValue = typeof dateValue === 'string' ? parseFloat(dateValue) : dateValue;
+          
+          if (typeof numericValue === 'number' && !isNaN(numericValue) && numericValue > 1 && numericValue < 100000) {
             // Excel date serial number conversion
-            // Excel's epoch: January 1, 1900 is day 1
-            // JavaScript Date constructor uses milliseconds since January 1, 1970
-            const excelEpoch = new Date(1899, 11, 30); // December 30, 1899 (day 0 in Excel)
-            const jsDate = new Date(excelEpoch.getTime() + (dateValue * 24 * 60 * 60 * 1000));
+            // Excel counts days from January 1, 1900 (with 1900 being day 1)
+            const excelStartDate = new Date(1900, 0, 1); // January 1, 1900
+            const jsDate = new Date(excelStartDate.getTime() + (numericValue - 1) * 24 * 60 * 60 * 1000);
             
             if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 3000) {
               const year = jsDate.getFullYear();
@@ -232,11 +233,11 @@ export function registerRoutes(app: Express): Server {
             }
           }
 
-          // Try to parse as date string
+          // Try to parse as regular date string
           if (typeof dateValue === 'string' && dateValue.trim()) {
             const parsedDate = new Date(dateValue.trim());
             if (!isNaN(parsedDate.getTime())) {
-              return parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+              return parsedDate.toISOString().split('T')[0];
             }
           }
 
