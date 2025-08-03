@@ -4,8 +4,11 @@ import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
 import { eq, like, or } from "drizzle-orm";
+import { setupAuth } from "./auth";
 
 export function registerRoutes(app: Express): Server {
+  // Setup authentication
+  setupAuth(app);
   // Contact form submission
   app.post("/api/contact", async (req, res) => {
     try {

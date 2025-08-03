@@ -47,7 +47,20 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 
 ## Recent Changes
 - **Date**: 2025-08-03
-- **Spreadsheet Tracking System**: Implemented comprehensive Excel/Google Sheets-based cargo tracking system
+- **Basic Authentication System**: Implemented secure admin authentication
+  - Passport.js-based authentication with session management
+  - Password hashing with scrypt and salt
+  - Protected admin routes requiring login
+  - Admin login/logout functionality at `/auth`
+  - MemoryStore session storage for development
+- **Duplicate Tracking Numbers**: Removed unique constraint to allow duplicate tracking numbers
+  - Multiple shipments with same tracking number now supported
+  - Search returns all matching entries with clear numbering
+- **Multi-Search Capability**: Added comma-separated tracking number search
+  - Support for "000001,000860" format searches
+  - Space-to-comma conversion for user convenience
+  - Display multiple results with separators
+- **Spreadsheet Tracking System**: Comprehensive Excel/Google Sheets-based cargo tracking system
   - Admin Excel/Google Sheets upload with validation and preview at `/admin/tracking`
   - Support for .xlsx, .xls, and .ods file formats
   - Client tracking search at `/tracking` (full number or last 6 digits)
@@ -55,7 +68,6 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - Real-time status tracking and timeline display
   - STATUS column visible only in admin interface, hidden from client tracking
 - **Vessel Editing**: Fixed vessel editing functionality with proper dialog state management
-- **Admin Navigation**: Added navigation between vessels and tracking data management
 
 ## User Preferences
 - Prefers clean, modern UI design
