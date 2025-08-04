@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
-import { eq, like, or, lt } from "drizzle-orm";
+import { eq, like, or, lt, inArray } from "drizzle-orm";
 import { setupAuth } from "./auth";
 
 // Cleanup function to delete tracking data older than 90 days
@@ -362,6 +362,35 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Manual cleanup failed:", error);
       res.status(500).json({ message: "Cleanup failed" });
+    }
+  });
+
+  // Bulk delete tracking records by IDs
+  app.delete("/api/tracking/bulk-delete", async (req, res) => {
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Invalid or empty IDs array" });
+      }
+
+      // Validate that all IDs are numbers
+      const validIds = ids.filter(id => typeof id === 'number' && !isNaN(id));
+      if (validIds.length !== ids.length) {
+        return res.status(400).json({ message: "All IDs must be valid numbers" });
+      }
+
+      const result = await db
+        .delete(trackingData)
+        .where(inArray(trackingData.id, validIds));
+      
+      res.json({ 
+        message: "Tracking records deleted successfully", 
+        count: result.rowCount || 0 
+      });
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+      res.status(500).json({ message: "Failed to delete tracking records" });
     }
   });
 

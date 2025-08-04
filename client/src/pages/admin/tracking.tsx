@@ -18,7 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Upload, FileText, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Upload, FileText, AlertCircle, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AdminNav from "@/components/admin/admin-nav";
 import CleanupButton from "@/components/admin/cleanup-button";
@@ -30,6 +31,7 @@ export default function TrackingAdmin() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<any[]>([]);
   const [preview, setPreview] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   const { data: trackingData, isLoading } = useQuery({
     queryKey: ['tracking-data'],
@@ -71,6 +73,60 @@ export default function TrackingAdmin() {
       });
     },
   });
+
+  const deleteSelectedMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const response = await fetch('/api/tracking/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete tracking records');
+      }
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['tracking-data'] });
+      setSelectedItems([]);
+      toast({
+        title: "Success",
+        description: `Deleted ${result.count} tracking records successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && trackingData) {
+      setSelectedItems(trackingData.map((item: any) => item.id));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedItems([...selectedItems, id]);
+    } else {
+      setSelectedItems(selectedItems.filter(itemId => itemId !== id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) return;
+    
+    if (confirm(`Are you sure you want to delete ${selectedItems.length} tracking records? This action cannot be undone.`)) {
+      deleteSelectedMutation.mutate(selectedItems);
+    }
+  };
 
   const parseSpreadsheet = (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
@@ -297,9 +353,23 @@ export default function TrackingAdmin() {
                 <CardTitle>Current Tracking Data</CardTitle>
                 <CardDescription>
                   {trackingData?.length || 0} tracking records in the system
+                  {selectedItems.length > 0 && ` • ${selectedItems.length} selected`}
                 </CardDescription>
               </div>
-              <CleanupButton onCleanupComplete={() => queryClient.invalidateQueries({ queryKey: ['tracking-data'] })} />
+              <div className="flex items-center gap-2">
+                {selectedItems.length > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    disabled={deleteSelectedMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {deleteSelectedMutation.isPending ? "Deleting..." : `Delete ${selectedItems.length}`}
+                  </Button>
+                )}
+                <CleanupButton onCleanupComplete={() => queryClient.invalidateQueries({ queryKey: ['tracking-data'] })} />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -309,6 +379,12 @@ export default function TrackingAdmin() {
               <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedItems.length === trackingData?.length && trackingData?.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </TableHead>
                         <TableHead>Tracking Number</TableHead>
                         <TableHead>CBM</TableHead>
                         <TableHead>Quantity</TableHead>
@@ -334,6 +410,12 @@ export default function TrackingAdmin() {
 
                         return (
                           <TableRow key={item.id}>
+                            <TableCell className="w-12">
+                              <Checkbox
+                                checked={selectedItems.includes(item.id)}
+                                onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
+                              />
+                            </TableCell>
                             <TableCell className="font-mono text-sm">{item.trackingNumber}</TableCell>
                             <TableCell>{item.cbm}</TableCell>
                             <TableCell>{item.quantity}</TableCell>
