@@ -19,12 +19,26 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 - **users**: Basic user authentication structure (currently unused)
 
 ### API Routes
+**Vessel Management:**
 - `GET /api/vessels` - Fetch all vessels
 - `POST /api/vessels` - Add new vessel
 - `PUT /api/vessels/:id` - Update vessel information
 - `DELETE /api/vessels/:id` - Delete vessel
 - `GET /api/vessels/:id` - Get specific vessel
 - `POST /api/vessels/extract-info` - Extract vessel info from MarineTraffic URLs
+
+**Tracking System:**
+- `GET /api/tracking` - Get all tracking data (admin)
+- `GET /api/tracking/:number` - Search tracking by number(s)
+- `POST /api/tracking/upload` - Upload Excel/CSV tracking data
+- `DELETE /api/tracking/bulk-delete` - Delete multiple tracking records
+- `POST /api/tracking/cleanup` - Manual cleanup of old records
+
+**Google Sheets Integration:**
+- `GET /api/google-sheets/status` - Get integration status and last sync time
+- `POST /api/google-sheets/sync` - Trigger manual sync from Google Sheets
+
+**General:**
 - `POST /api/contact` - Contact form submission
 - `POST /api/service-request` - Service request form submission
 
@@ -46,6 +60,18 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
    - Terms and conditions
 
 ## Recent Changes
+- **Date**: 2025-08-04
+- **Bulk Delete Functionality**: Added multi-select bulk delete for tracking records
+  - Individual and "select all" checkboxes in admin tracking table
+  - Bulk delete button with confirmation dialog
+  - Backend API endpoint for batch deletion with validation
+- **Google Sheets Integration**: Automatic periodic sync from Google Sheets
+  - Scheduled sync every 15 minutes using Google Sheets API
+  - Manual sync button in admin interface
+  - Service account authentication with environment variables
+  - Real-time sync status and last sync time display
+  - Full data replacement on each sync to ensure accuracy
+  - Support for same column format as Excel uploads
 - **Date**: 2025-08-03
 - **Automatic Data Cleanup**: Implemented 90-day data retention policy
   - Tracking data automatically deleted after 90 days from upload

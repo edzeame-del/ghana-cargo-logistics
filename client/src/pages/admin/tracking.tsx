@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, FileText, AlertCircle, Trash2 } from "lucide-react";
+import { Upload, FileText, AlertCircle, Trash2, RefreshCw, Cloud, CheckCircle, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AdminNav from "@/components/admin/admin-nav";
 import CleanupButton from "@/components/admin/cleanup-button";
@@ -40,6 +40,16 @@ export default function TrackingAdmin() {
       if (!response.ok) throw new Error('Failed to fetch tracking data');
       return response.json();
     },
+  });
+
+  const { data: googleSheetsStatus } = useQuery({
+    queryKey: ['google-sheets-status'],
+    queryFn: async () => {
+      const response = await fetch('/api/google-sheets/status');
+      if (!response.ok) throw new Error('Failed to fetch Google Sheets status');
+      return response.json();
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const uploadMutation = useMutation({
@@ -93,6 +103,35 @@ export default function TrackingAdmin() {
       toast({
         title: "Success",
         description: `Deleted ${result.count} tracking records successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const googleSheetsSyncMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/google-sheets/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to sync Google Sheets');
+      }
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['tracking-data'] });
+      queryClient.invalidateQueries({ queryKey: ['google-sheets-status'] });
+      toast({
+        title: "Success",
+        description: `Google Sheets sync completed: ${result.count} records processed`,
       });
     },
     onError: (error: Error) => {
@@ -270,6 +309,70 @@ export default function TrackingAdmin() {
         <h1 className="text-3xl font-bold mb-8">Manage Tracking Data</h1>
 
       <div className="grid gap-8">
+        {/* Google Sheets Integration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Cloud className="h-5 w-5" />
+              Google Sheets Integration
+            </CardTitle>
+            <CardDescription>
+              Automatically sync tracking data from your Google Sheets every 15 minutes
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                {googleSheetsStatus?.configured ? (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500" />
+                )}
+                <div>
+                  <p className="font-medium">
+                    {googleSheetsStatus?.configured ? 'Connected' : 'Not Configured'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {googleSheetsStatus?.configured 
+                      ? `Sheet ID: ${googleSheetsStatus.spreadsheetId}` 
+                      : 'Set GOOGLE_SERVICE_ACCOUNT_KEY and GOOGLE_SHEETS_ID environment variables'
+                    }
+                  </p>
+                  {googleSheetsStatus?.configured && googleSheetsStatus.lastSyncTime && (
+                    <p className="text-xs text-gray-400">
+                      Last sync: {new Date(googleSheetsStatus.lastSyncTime).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {googleSheetsStatus?.configured && (
+                <Button 
+                  onClick={() => googleSheetsSyncMutation.mutate()}
+                  disabled={googleSheetsSyncMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${googleSheetsSyncMutation.isPending ? 'animate-spin' : ''}`} />
+                  {googleSheetsSyncMutation.isPending ? 'Syncing...' : 'Manual Sync'}
+                </Button>
+              )}
+            </div>
+            
+            {!googleSheetsStatus?.configured && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  To enable Google Sheets integration:
+                  <br />1. Create a Google Service Account and download the JSON key
+                  <br />2. Set GOOGLE_SERVICE_ACCOUNT_KEY environment variable to the JSON content
+                  <br />3. Set GOOGLE_SHEETS_ID to your Google Sheets document ID
+                  <br />4. Ensure your sheet has columns: TRACKING NUMBER, CBM, QUANTITY, RECEIVED, LOADED, ETA, STATUS, SHIPPING MARK
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Upload Section */}
         <Card>
           <CardHeader>

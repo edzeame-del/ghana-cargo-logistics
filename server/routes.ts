@@ -5,6 +5,7 @@ import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
 import { eq, like, or, lt, inArray } from "drizzle-orm";
 import { setupAuth } from "./auth";
+import { googleSheetsService } from "./google-sheets";
 
 // Cleanup function to delete tracking data older than 90 days
 async function cleanupOldTrackingData() {
@@ -391,6 +392,31 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Bulk delete failed:", error);
       res.status(500).json({ message: "Failed to delete tracking records" });
+    }
+  });
+
+  // Google Sheets integration endpoints
+  app.get("/api/google-sheets/status", async (req, res) => {
+    try {
+      const status = googleSheetsService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Failed to get Google Sheets status:", error);
+      res.status(500).json({ message: "Failed to get status" });
+    }
+  });
+
+  app.post("/api/google-sheets/sync", async (req, res) => {
+    try {
+      const result = await googleSheetsService.manualSync();
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Manual sync failed:", error);
+      res.status(500).json({ message: "Failed to sync Google Sheets" });
     }
   });
 
