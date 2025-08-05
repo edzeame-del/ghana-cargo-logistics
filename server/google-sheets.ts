@@ -194,29 +194,61 @@ export class GoogleSheetsService {
         return dateValue.trim();
       }
 
-      // Handle Excel date serial numbers
+      // Handle Excel date serial numbers - Google Sheets API provides them as numbers
       const numericValue = typeof dateValue === 'string' ? parseFloat(dateValue) : dateValue;
       
-      if (typeof numericValue === 'number' && !isNaN(numericValue) && numericValue > 1 && numericValue < 100000) {
-        const excelStartDate = new Date(1900, 0, 1);
-        const jsDate = new Date(excelStartDate.getTime() + (numericValue - 1) * 24 * 60 * 60 * 1000);
+      if (typeof numericValue === 'number' && !isNaN(numericValue)) {
+        // For values that look like Excel serial dates (between reasonable date range)
+        if (numericValue > 25000 && numericValue < 100000) {
+          // Excel epoch: January 1, 1900 (but Excel has a leap year bug for 1900)
+          const excelEpoch = new Date(1899, 11, 30); // December 30, 1899 to account for Excel's bug
+          const msPerDay = 24 * 60 * 60 * 1000;
+          const jsDate = new Date(excelEpoch.getTime() + numericValue * msPerDay);
+          
+          if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() >= 2020 && jsDate.getFullYear() <= 2030) {
+            const year = jsDate.getFullYear();
+            const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+            const day = String(jsDate.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+        }
         
-        if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 3000) {
-          const year = jsDate.getFullYear();
-          const month = String(jsDate.getMonth() + 1).padStart(2, '0');
-          const day = String(jsDate.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
+        // For smaller numbers, might be day/month values - try different approach
+        if (numericValue > 1 && numericValue < 25000) {
+          // Try treating as days since Unix epoch
+          const unixDate = new Date(numericValue * 24 * 60 * 60 * 1000);
+          if (!isNaN(unixDate.getTime()) && unixDate.getFullYear() > 1970) {
+            return unixDate.toISOString().split('T')[0];
+          }
         }
       }
 
       // Try to parse as regular date string
       if (typeof dateValue === 'string' && dateValue.trim()) {
-        const parsedDate = new Date(dateValue.trim());
-        if (!isNaN(parsedDate.getTime())) {
+        let dateStr = dateValue.trim();
+        
+        // Handle Google Sheets format like "2025/6/2" by converting to proper format
+        if (dateStr.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
+          const parts = dateStr.split('/');
+          const year = parts[0];
+          const month = parts[1].padStart(2, '0');
+          const day = parts[2].padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        
+        // Handle formats like "4th April" by adding current year
+        if (dateStr.match(/^\d+(st|nd|rd|th)\s+\w+$/i)) {
+          const currentYear = new Date().getFullYear();
+          dateStr = `${dateStr} ${currentYear}`;
+        }
+        
+        const parsedDate = new Date(dateStr);
+        if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 1900) {
           return parsedDate.toISOString().split('T')[0];
         }
       }
 
+      // If all else fails, return the original value as a string
       return dateValue ? dateValue.toString().trim() : "";
     };
 
@@ -254,8 +286,23 @@ export class GoogleSheetsService {
         return null;
       }
 
-      const dateLoaded = processDate(getValue(row, columnIndices.dateLoaded));
-      const providedEta = processDate(getValue(row, columnIndices.eta));
+      const rawDateReceived = getValue(row, columnIndices.dateReceived);
+      const rawDateLoaded = getValue(row, columnIndices.dateLoaded);
+      const rawEta = getValue(row, columnIndices.eta);
+      
+      // Debug logging for date conversion (can be removed later)
+      if (trackingNumber === "940215") {
+        const testDateReceived = processDate(rawDateReceived);
+        const testDateLoaded = processDate(rawDateLoaded);
+        console.log('Date conversion test for', trackingNumber, ':', {
+          raw: { dateReceived: rawDateReceived, dateLoaded: rawDateLoaded },
+          processed: { dateReceived: testDateReceived, dateLoaded: testDateLoaded }
+        });
+      }
+      
+      const dateReceived = processDate(rawDateReceived);
+      const dateLoaded = processDate(rawDateLoaded);
+      const providedEta = processDate(rawEta);
       
       // Use provided ETA if available, otherwise calculate from loading date + 45 days
       const finalEta = providedEta || calculateEtaFromLoading(dateLoaded);
@@ -264,7 +311,7 @@ export class GoogleSheetsService {
         trackingNumber: trackingNumber || "",
         cbm: getValue(row, columnIndices.cbm),
         quantity: getValue(row, columnIndices.quantity),
-        dateReceived: processDate(getValue(row, columnIndices.dateReceived)),
+        dateReceived: dateReceived,
         dateLoaded: dateLoaded,
         eta: finalEta,
         status: getValue(row, columnIndices.status),
