@@ -60,20 +60,28 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
    - Terms and conditions
 
 ## Recent Changes
-- **Date**: 2025-08-04
+- **Date**: 2025-08-05
 - **Bulk Delete Functionality**: Added multi-select bulk delete for tracking records
   - Individual and "select all" checkboxes in admin tracking table
   - Bulk delete button with confirmation dialog
   - Backend API endpoint for batch deletion with validation
-- **Google Sheets Integration**: Automatic periodic sync from Google Sheets
+- **Google Sheets Integration**: Fully operational with bilingual Chinese/English support
+  - Fixed maximum call stack error that was preventing proper data processing
+  - Successfully processing 40,000+ records from user's bilingual Google Sheet
   - Scheduled sync every 15 minutes using Google Sheets API
   - Manual sync button in admin interface
   - Service account authentication with environment variables
   - Real-time sync status and last sync time display
   - Full data replacement on each sync to ensure accuracy
-  - **Smart Column Detection**: Automatically detects and maps column headers regardless of naming
-  - Support for flexible header variations (tracking/track/number, cbm/volume, quantity/qty, etc.)
-  - Extended range scanning (A:Z) to capture any column layout
+  - **Fixed Column Mapping**: Correctly maps user's specific Google Sheets structure:
+    - Column A (0): Shipping Mark (唛头/客户名SHIPPIN MARK/CLIENT)
+    - Column B (1): Date Received (送货日期\nDATE OF RECEIPT)
+    - Column C (2): Date Loaded (装柜日期\nDATE OF LOADING)
+    - Column E (4): Quantity (件数\nCTNS)
+    - Column G (6): CBM (体积\nCBM)
+    - Column H (7): Tracking Number (供应商/快递单号\nSUPPLIER&TRACKING NO)
+    - Column I (8): ETA
+  - Batch processing for optimal performance with large datasets
 - **Date**: 2025-08-03
 - **Automatic Data Cleanup**: Implemented 90-day data retention policy
   - Tracking data automatically deleted after 90 days from upload

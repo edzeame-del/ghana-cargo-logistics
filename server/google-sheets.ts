@@ -171,19 +171,20 @@ export class GoogleSheetsService {
       );
     };
 
+    // Fixed column positions based on your Google Sheets structure
     const columnIndices = {
-      trackingNumber: getColumnIndex(columnMappings.trackingNumber),
-      cbm: getColumnIndex(columnMappings.cbm),
-      quantity: getColumnIndex(columnMappings.quantity),
-      dateReceived: getColumnIndex(columnMappings.dateReceived),
-      dateLoaded: getColumnIndex(columnMappings.dateLoaded),
-      eta: getColumnIndex(columnMappings.eta),
-      status: getColumnIndex(columnMappings.status),
-      shippingMark: getColumnIndex(columnMappings.shippingMark)
+      shippingMark: 0,     // Column A: 唛头/客户名SHIPPIN MARK/CLIENT
+      dateReceived: 1,     // Column B: 送货日期\nDATE OF RECEIPT  
+      dateLoaded: 2,       // Column C: 装柜日期\nDATE OF LOADING
+      quantity: 4,         // Column E: 件数\nCTNS
+      cbm: 6,              // Column G: 体积\nCBM
+      trackingNumber: 7,   // Column H: 供应商/快递单号\nSUPPLIER&TRACKING NO
+      eta: 8,              // Column I: ETA
+      status: -1           // Not present in your sheet
     };
 
     console.log('Google Sheets headers detected:', headers);
-    console.log('Column mappings found:', columnIndices);
+    console.log('Fixed column mappings applied:', columnIndices);
 
     const processDate = (dateValue: any) => {
       if (!dateValue) return "";
