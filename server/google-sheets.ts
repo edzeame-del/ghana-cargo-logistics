@@ -67,10 +67,10 @@ export class GoogleSheetsService {
     }
 
     try {
-      // Get the sheet data - expanded range to capture more columns
+      // Get the full sheet data
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'A:Z', // Extended range to capture any column layout
+        range: 'A:Z', // Full range to capture all data
       });
 
       const rows = response.data.values;
@@ -78,17 +78,31 @@ export class GoogleSheetsService {
         return { success: false, message: 'No data found in spreadsheet' };
       }
 
-      // Skip header row and process data
-      const dataRows = rows.slice(1);
-      const processedData = this.processSheetData(dataRows);
+      console.log(`Found ${rows.length} rows in Google Sheets`);
+      console.log('Raw headers:', rows[0]);
+
+      // Process data with smart column detection
+      const processedData = this.processSheetData(rows);
 
       if (processedData.length === 0) {
         return { success: false, message: 'No valid tracking data found' };
       }
 
-      // Clear existing data and insert new data (full sync)
+      console.log(`Processing ${processedData.length} records for database insert`);
+
+      // Clear existing data and insert in batches for better performance
       await db.delete(trackingData);
-      const result = await db.insert(trackingData).values(processedData).returning();
+      
+      let result = [];
+      if (processedData.length > 0) {
+        const batchSize = 500; // Reasonable batch size
+        for (let i = 0; i < processedData.length; i += batchSize) {
+          const batch = processedData.slice(i, i + batchSize);
+          const batchResult = await db.insert(trackingData).values(batch).returning();
+          result.push(...batchResult);
+          console.log(`Inserted batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(processedData.length/batchSize)}`);
+        }
+      }
 
       this.lastSyncTime = new Date();
       
@@ -115,16 +129,37 @@ export class GoogleSheetsService {
     const headers = rows[0].map((header: any) => header ? header.toString().trim().toLowerCase() : '');
     const dataRows = rows.slice(1); // Skip header row
     
-    // Define column mapping variations for flexible header matching
+    // Enhanced column mapping with Chinese/English support
     const columnMappings = {
-      trackingNumber: ['tracking number', 'tracking', 'trackingnumber', 'track', 'number', 'tracking no', 'track no'],
-      cbm: ['cbm', 'cubic meter', 'cubic', 'volume', 'm3'],
-      quantity: ['quantity', 'qty', 'pieces', 'pcs', 'count', 'amount'],
-      dateReceived: ['received', 'date received', 'datereceived', 'received date', 'receipt date', 'date of receipt'],
-      dateLoaded: ['loaded', 'date loaded', 'dateloaded', 'loaded date', 'loading date', 'date of loading'],
-      eta: ['eta', 'estimated arrival', 'arrival date', 'expected arrival', 'delivery date'],
-      status: ['status', 'state', 'condition', 'stage'],
-      shippingMark: ['shipping mark', 'shippingmark', 'mark', 'reference', 'ref', 'marks']
+      trackingNumber: [
+        'tracking number', 'tracking', 'trackingnumber', 'track', 'number', 'tracking no', 'track no',
+        '跟踪号', '追踪号', '快递单号', 'supplier', 'tracking no'
+      ],
+      cbm: [
+        'cbm', 'cubic meter', 'cubic', 'volume', 'm3', '体积', '立方'
+      ],
+      quantity: [
+        'quantity', 'qty', 'pieces', 'pcs', 'count', 'amount', '件数', 'ctns', '数量'
+      ],
+      dateReceived: [
+        'received', 'date received', 'datereceived', 'received date', 'receipt date', 'date of receipt',
+        '收货日期', '送货日期', 'receipt'
+      ],
+      dateLoaded: [
+        'loaded', 'date loaded', 'dateloaded', 'loaded date', 'loading date', 'date of loading',
+        '装柜日期', '装载日期', 'loading'
+      ],
+      eta: [
+        'eta', 'estimated arrival', 'arrival date', 'expected arrival', 'delivery date',
+        '预计到达', '到货日期'
+      ],
+      status: [
+        'status', 'state', 'condition', 'stage', '状态', '情况'
+      ],
+      shippingMark: [
+        'shipping mark', 'shippingmark', 'mark', 'reference', 'ref', 'marks',
+        '唛头', '客户名', 'client', 'shippin mark'
+      ]
     };
 
     // Find column indices based on headers
@@ -185,21 +220,29 @@ export class GoogleSheetsService {
     };
 
     const getValue = (row: any[], index: number) => {
-      return index >= 0 && row[index] ? row[index].toString().trim() : "";
+      return index >= 0 && row[index] !== undefined && row[index] !== null ? row[index].toString().trim() : "";
     };
 
     return dataRows.map(row => {
+      const trackingNumber = getValue(row, columnIndices.trackingNumber);
+      const shippingMark = getValue(row, columnIndices.shippingMark);
+      
+      // Ensure we have required fields
+      if (!trackingNumber && !shippingMark) {
+        return null;
+      }
+
       return {
-        trackingNumber: getValue(row, columnIndices.trackingNumber),
+        trackingNumber: trackingNumber || "",
         cbm: getValue(row, columnIndices.cbm),
         quantity: getValue(row, columnIndices.quantity),
         dateReceived: processDate(getValue(row, columnIndices.dateReceived)),
         dateLoaded: processDate(getValue(row, columnIndices.dateLoaded)),
         eta: processDate(getValue(row, columnIndices.eta)),
         status: getValue(row, columnIndices.status),
-        shippingMark: getValue(row, columnIndices.shippingMark),
+        shippingMark: shippingMark || "",
       };
-    }).filter(item => item.trackingNumber); // Only include rows with tracking numbers
+    }).filter(item => item !== null && (item.trackingNumber || item.shippingMark)); // Include rows with tracking number or shipping mark
   }
 
   getStatus() {
