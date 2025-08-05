@@ -16,6 +16,7 @@ type TrackingData = {
   quantity: string;
   cbm: string;
   eta: string;
+  status: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,7 +57,12 @@ export default function Tracking() {
     }
   };
 
-  const formatDate = (dateStr: string | null | undefined) => {
+  const formatDate = (dateStr: string | null | undefined, isPending: boolean = false, field: string = '') => {
+    // Show "Not Yet Loaded" for loading date and ETA when status is "Pending Loading"
+    if (isPending && (field === 'loading' || field === 'eta')) {
+      return "Not Yet Loaded";
+    }
+    
     if (!dateStr || dateStr.trim() === '' || dateStr === 'null') return "N/A";
     try {
       const date = new Date(dateStr);
@@ -196,26 +202,30 @@ export default function Tracking() {
                             </div>
                           </div>
                         )}
-                        {data.dateLoaded && (
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <div>
-                              <div className="text-sm font-medium">Loaded</div>
-                              <div className="text-sm text-gray-500">{formatDate(data.dateLoaded)}</div>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${data.status === 'Pending Loading' ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
+                          <div>
+                            <div className="text-sm font-medium">Loaded</div>
+                            <div className="text-sm text-gray-500">
+                              {formatDate(data.dateLoaded, data.status === 'Pending Loading', 'loading')}
                             </div>
                           </div>
-                        )}
-                        {data.eta && data.eta.trim() !== '' && (
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${new Date(data.eta) < new Date() ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-                            <div>
-                              <div className="text-sm font-medium">
-                                {new Date(data.eta) < new Date() ? 'Delivered' : 'Expected Arrival'}
-                              </div>
-                              <div className="text-sm text-gray-500">{formatDate(data.eta)}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            data.status === 'Pending Loading' ? 'bg-gray-300' : 
+                            (data.eta && new Date(data.eta) < new Date() ? 'bg-green-500' : 'bg-orange-500')
+                          }`}></div>
+                          <div>
+                            <div className="text-sm font-medium">
+                              {data.status === 'Pending Loading' ? 'Expected Arrival' :
+                               (data.eta && new Date(data.eta) < new Date() ? 'Delivered' : 'Expected Arrival')}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {formatDate(data.eta, data.status === 'Pending Loading', 'eta')}
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
