@@ -66,9 +66,10 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - Bulk delete button with confirmation dialog
   - Backend API endpoint for batch deletion with validation
 - **Dual Google Sheets Integration**: Comprehensive tracking system with two data sources
-  - **Main Tracking Sheet**: Fully operational with bilingual Chinese/English support (19,000+ records)
-  - **Pending Goods Sheet**: Ready for integration (requires valid Google Sheets ID)
+  - **Main Tracking Sheet**: Fully operational with bilingual Chinese/English support (19,044 records)
+  - **Pending Goods Sheet**: Successfully integrated with 1,013 records
   - Records automatically tagged with status: "Loaded" for main sheet, "Pending Loading" for pending sheet
+  - Total system capacity: 19,646+ records across both sheets
   - Fixed maximum call stack error that was preventing proper data processing
   - Scheduled sync every 15 minutes using Google Sheets API
   - Manual sync button in admin interface

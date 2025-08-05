@@ -19,7 +19,7 @@ export class GoogleSheetsService {
       // Check if Google Sheets credentials are available
       const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
       const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
-      const pendingSpreadsheetId = process.env.GOOGLE_SHEETS_ID_PENDING;
+      const pendingSpreadsheetId = process.env.GOOGLE_SHEETS_ID_PENDING_COMPLETE || process.env.GOOGLE_SHEETS_ID_PENDING;
 
       if (!serviceAccountKey || !spreadsheetId) {
         console.log('Google Sheets integration not configured - missing credentials');
