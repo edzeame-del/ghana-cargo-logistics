@@ -358,7 +358,7 @@ export default function TrackingAdmin() {
               )}
             </div>
             
-            {!googleSheetsStatus?.configured && (
+            {!googleSheetsStatus?.configured ? (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
@@ -366,7 +366,18 @@ export default function TrackingAdmin() {
                   <br />1. Create a Google Service Account and download the JSON key
                   <br />2. Set GOOGLE_SERVICE_ACCOUNT_KEY environment variable to the JSON content
                   <br />3. Set GOOGLE_SHEETS_ID to your Google Sheets document ID
-                  <br />4. Ensure your sheet has columns: TRACKING NUMBER, CBM, QUANTITY, RECEIVED, LOADED, ETA, STATUS, SHIPPING MARK
+                  <br />4. Share your Google Sheet with the service account email
+                  <br />5. Your sheet can have any column headers - the system will auto-detect them
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Smart Column Detection:</strong> The system automatically detects column headers and maps them to the appropriate fields.
+                  <br />Supported variations include: tracking/track/number, cbm/volume, quantity/qty/pieces, received/receipt, loaded/loading, eta/arrival, status/state, shipping mark/mark/reference
+                  <br />
+                  <br /><strong>Important:</strong> Make sure to share your Google Sheet with the service account email (found in your service account JSON) with "Viewer" permission.
                 </AlertDescription>
               </Alert>
             )}

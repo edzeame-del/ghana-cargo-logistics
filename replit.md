@@ -71,7 +71,9 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - Service account authentication with environment variables
   - Real-time sync status and last sync time display
   - Full data replacement on each sync to ensure accuracy
-  - Support for same column format as Excel uploads
+  - **Smart Column Detection**: Automatically detects and maps column headers regardless of naming
+  - Support for flexible header variations (tracking/track/number, cbm/volume, quantity/qty, etc.)
+  - Extended range scanning (A:Z) to capture any column layout
 - **Date**: 2025-08-03
 - **Automatic Data Cleanup**: Implemented 90-day data retention policy
   - Tracking data automatically deleted after 90 days from upload

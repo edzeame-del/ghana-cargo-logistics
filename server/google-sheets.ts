@@ -67,10 +67,10 @@ export class GoogleSheetsService {
     }
 
     try {
-      // Get the sheet data
+      // Get the sheet data - expanded range to capture more columns
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'A:H', // Assuming columns A-H contain the tracking data
+        range: 'A:Z', // Extended range to capture any column layout
       });
 
       const rows = response.data.values;
@@ -109,51 +109,95 @@ export class GoogleSheetsService {
   }
 
   private processSheetData(rows: any[][]): any[] {
-    return rows.map(row => {
-      const processDate = (dateValue: any) => {
-        if (!dateValue) return "";
+    if (rows.length === 0) return [];
+    
+    // Get headers from first row
+    const headers = rows[0].map((header: any) => header ? header.toString().trim().toLowerCase() : '');
+    const dataRows = rows.slice(1); // Skip header row
+    
+    // Define column mapping variations for flexible header matching
+    const columnMappings = {
+      trackingNumber: ['tracking number', 'tracking', 'trackingnumber', 'track', 'number', 'tracking no', 'track no'],
+      cbm: ['cbm', 'cubic meter', 'cubic', 'volume', 'm3'],
+      quantity: ['quantity', 'qty', 'pieces', 'pcs', 'count', 'amount'],
+      dateReceived: ['received', 'date received', 'datereceived', 'received date', 'receipt date', 'date of receipt'],
+      dateLoaded: ['loaded', 'date loaded', 'dateloaded', 'loaded date', 'loading date', 'date of loading'],
+      eta: ['eta', 'estimated arrival', 'arrival date', 'expected arrival', 'delivery date'],
+      status: ['status', 'state', 'condition', 'stage'],
+      shippingMark: ['shipping mark', 'shippingmark', 'mark', 'reference', 'ref', 'marks']
+    };
 
-        // If it's already a formatted date string (YYYY-MM-DD), return as is
-        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue.trim())) {
-          return dateValue.trim();
-        }
+    // Find column indices based on headers
+    const getColumnIndex = (fieldMappings: string[]) => {
+      return headers.findIndex(header => 
+        fieldMappings.some(mapping => 
+          header.includes(mapping) || mapping.includes(header)
+        )
+      );
+    };
 
-        // Handle Excel date serial numbers
-        const numericValue = typeof dateValue === 'string' ? parseFloat(dateValue) : dateValue;
+    const columnIndices = {
+      trackingNumber: getColumnIndex(columnMappings.trackingNumber),
+      cbm: getColumnIndex(columnMappings.cbm),
+      quantity: getColumnIndex(columnMappings.quantity),
+      dateReceived: getColumnIndex(columnMappings.dateReceived),
+      dateLoaded: getColumnIndex(columnMappings.dateLoaded),
+      eta: getColumnIndex(columnMappings.eta),
+      status: getColumnIndex(columnMappings.status),
+      shippingMark: getColumnIndex(columnMappings.shippingMark)
+    };
+
+    console.log('Google Sheets headers detected:', headers);
+    console.log('Column mappings found:', columnIndices);
+
+    const processDate = (dateValue: any) => {
+      if (!dateValue) return "";
+
+      // If it's already a formatted date string (YYYY-MM-DD), return as is
+      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue.trim())) {
+        return dateValue.trim();
+      }
+
+      // Handle Excel date serial numbers
+      const numericValue = typeof dateValue === 'string' ? parseFloat(dateValue) : dateValue;
+      
+      if (typeof numericValue === 'number' && !isNaN(numericValue) && numericValue > 1 && numericValue < 100000) {
+        const excelStartDate = new Date(1900, 0, 1);
+        const jsDate = new Date(excelStartDate.getTime() + (numericValue - 1) * 24 * 60 * 60 * 1000);
         
-        if (typeof numericValue === 'number' && !isNaN(numericValue) && numericValue > 1 && numericValue < 100000) {
-          const excelStartDate = new Date(1900, 0, 1);
-          const jsDate = new Date(excelStartDate.getTime() + (numericValue - 1) * 24 * 60 * 60 * 1000);
-          
-          if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 3000) {
-            const year = jsDate.getFullYear();
-            const month = String(jsDate.getMonth() + 1).padStart(2, '0');
-            const day = String(jsDate.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-          }
+        if (!isNaN(jsDate.getTime()) && jsDate.getFullYear() > 1900 && jsDate.getFullYear() < 3000) {
+          const year = jsDate.getFullYear();
+          const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+          const day = String(jsDate.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
         }
+      }
 
-        // Try to parse as regular date string
-        if (typeof dateValue === 'string' && dateValue.trim()) {
-          const parsedDate = new Date(dateValue.trim());
-          if (!isNaN(parsedDate.getTime())) {
-            return parsedDate.toISOString().split('T')[0];
-          }
+      // Try to parse as regular date string
+      if (typeof dateValue === 'string' && dateValue.trim()) {
+        const parsedDate = new Date(dateValue.trim());
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate.toISOString().split('T')[0];
         }
+      }
 
-        return dateValue ? dateValue.toString().trim() : "";
-      };
+      return dateValue ? dateValue.toString().trim() : "";
+    };
 
-      // Map columns based on expected order: TRACKING NUMBER, CBM, QUANTITY, RECEIVED, LOADED, ETA, STATUS, SHIPPING MARK
+    const getValue = (row: any[], index: number) => {
+      return index >= 0 && row[index] ? row[index].toString().trim() : "";
+    };
+
+    return dataRows.map(row => {
       return {
-        trackingNumber: (row[0] || "").toString().trim(),
-        cbm: (row[1] || "").toString().trim(),
-        quantity: (row[2] || "").toString().trim(),
-        dateReceived: processDate(row[3]),
-        dateLoaded: processDate(row[4]),
-        eta: processDate(row[5]),
-        status: (row[6] || "").toString().trim(),
-        shippingMark: (row[7] || "").toString().trim(),
+        trackingNumber: getValue(row, columnIndices.trackingNumber),
+        cbm: getValue(row, columnIndices.cbm),
+        quantity: getValue(row, columnIndices.quantity),
+        dateReceived: processDate(getValue(row, columnIndices.dateReceived)),
+        dateLoaded: processDate(getValue(row, columnIndices.dateLoaded)),
+        eta: processDate(getValue(row, columnIndices.eta)),
+        status: getValue(row, columnIndices.status),
+        shippingMark: getValue(row, columnIndices.shippingMark),
       };
     }).filter(item => item.trackingNumber); // Only include rows with tracking numbers
   }
