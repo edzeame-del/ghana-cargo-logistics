@@ -7,6 +7,7 @@ export class GoogleSheetsService {
   private sheets: any;
   private isConfigured = false;
   private spreadsheetId: string = '';
+  private pendingSpreadsheetId: string = '';
   private lastSyncTime: Date = new Date(0);
 
   constructor() {
@@ -18,6 +19,7 @@ export class GoogleSheetsService {
       // Check if Google Sheets credentials are available
       const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
       const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+      const pendingSpreadsheetId = process.env.GOOGLE_SHEETS_ID_PENDING;
 
       if (!serviceAccountKey || !spreadsheetId) {
         console.log('Google Sheets integration not configured - missing credentials');
@@ -36,6 +38,7 @@ export class GoogleSheetsService {
 
       this.sheets = google.sheets({ version: 'v4', auth });
       this.spreadsheetId = spreadsheetId;
+      this.pendingSpreadsheetId = pendingSpreadsheetId || '';
       this.isConfigured = true;
 
       console.log('Google Sheets integration configured successfully');
@@ -67,40 +70,62 @@ export class GoogleSheetsService {
     }
 
     try {
-      // Get the full sheet data
-      const response = await this.sheets.spreadsheets.values.get({
+      let allProcessedData = [];
+      
+      // Get data from main tracking sheet (loaded goods)
+      const mainResponse = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'A:Z', // Full range to capture all data
+        range: 'A:Z',
       });
 
-      const rows = response.data.values;
-      if (!rows || rows.length === 0) {
-        return { success: false, message: 'No data found in spreadsheet' };
+      const mainRows = mainResponse.data.values;
+      if (mainRows && mainRows.length > 0) {
+        console.log(`Found ${mainRows.length} rows in main Google Sheets`);
+        console.log('Raw headers:', mainRows[0]);
+        
+        const mainProcessedData = this.processSheetData(mainRows, 'Loaded');
+        allProcessedData.push(...mainProcessedData);
       }
 
-      console.log(`Found ${rows.length} rows in Google Sheets`);
-      console.log('Raw headers:', rows[0]);
+      // Get data from pending goods sheet if configured
+      if (this.pendingSpreadsheetId) {
+        try {
+          const pendingResponse = await this.sheets.spreadsheets.values.get({
+            spreadsheetId: this.pendingSpreadsheetId,
+            range: 'A:Z',
+          });
 
-      // Process data with smart column detection
-      const processedData = this.processSheetData(rows);
-
-      if (processedData.length === 0) {
-        return { success: false, message: 'No valid tracking data found' };
+          const pendingRows = pendingResponse.data.values;
+          if (pendingRows && pendingRows.length > 0) {
+            console.log(`Found ${pendingRows.length} rows in pending goods Google Sheets`);
+            console.log('Pending sheet headers:', pendingRows[0]);
+            
+            const pendingProcessedData = this.processSheetData(pendingRows, 'Pending Loading');
+            allProcessedData.push(...pendingProcessedData);
+          }
+        } catch (pendingError) {
+          console.error('Error accessing pending goods sheet:', pendingError);
+          // Continue with main sheet data even if pending sheet fails
+        }
       }
 
-      console.log(`Processing ${processedData.length} records for database insert`);
+      if (allProcessedData.length === 0) {
+        return { success: false, message: 'No valid tracking data found in any sheet' };
+      }
+
+      console.log(`Processing ${allProcessedData.length} total records for database insert`);
 
       // Clear existing data and insert in batches for better performance
       await db.delete(trackingData);
       
       let result = [];
-      if (processedData.length > 0) {
-        const batchSize = 500; // Reasonable batch size
-        for (let i = 0; i < processedData.length; i += batchSize) {
-          const batch = processedData.slice(i, i + batchSize);
+      if (allProcessedData.length > 0) {
+        const batchSize = 500;
+        for (let i = 0; i < allProcessedData.length; i += batchSize) {
+          const batch = allProcessedData.slice(i, i + batchSize);
           const batchResult = await db.insert(trackingData).values(batch).returning();
           result.push(...batchResult);
-          console.log(`Inserted batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(processedData.length/batchSize)}`);
+          console.log(`Inserted batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(allProcessedData.length/batchSize)}`);
         }
       }
 
@@ -122,7 +147,7 @@ export class GoogleSheetsService {
     }
   }
 
-  private processSheetData(rows: any[][]): any[] {
+  private processSheetData(rows: any[][], defaultStatus: string = ''): any[] {
     if (rows.length === 0) return [];
     
     // Get headers from first row
@@ -310,7 +335,15 @@ export class GoogleSheetsService {
       const providedEta = processDate(rawEta);
       
       // Use provided ETA if available, otherwise calculate from loading date + 45 days
-      const finalEta = providedEta || calculateEtaFromLoading(dateLoaded);
+      // For pending goods, don't calculate ETA if no loading date exists
+      let finalEta = providedEta;
+      if (!finalEta && dateLoaded && defaultStatus !== 'Pending Loading') {
+        finalEta = calculateEtaFromLoading(dateLoaded);
+      }
+
+      // Determine final status: use provided status or default status
+      const providedStatus = getValue(row, columnIndices.status);
+      const finalStatus = providedStatus || defaultStatus;
 
       return {
         trackingNumber: trackingNumber || "",
@@ -319,7 +352,7 @@ export class GoogleSheetsService {
         dateReceived: dateReceived,
         dateLoaded: dateLoaded,
         eta: finalEta,
-        status: getValue(row, columnIndices.status),
+        status: finalStatus,
         shippingMark: shippingMark || "",
       };
     }).filter(item => item !== null && (item.trackingNumber || item.shippingMark)); // Include rows with tracking number or shipping mark
@@ -329,6 +362,7 @@ export class GoogleSheetsService {
     return {
       configured: this.isConfigured,
       spreadsheetId: this.spreadsheetId ? this.spreadsheetId.substring(0, 10) + '...' : '',
+      pendingSpreadsheetId: this.pendingSpreadsheetId ? this.pendingSpreadsheetId.substring(0, 10) + '...' : '',
       lastSyncTime: this.lastSyncTime,
     };
   }
