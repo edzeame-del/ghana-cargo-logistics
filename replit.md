@@ -82,6 +82,7 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
     - Column H (7): Tracking Number (供应商/快递单号\nSUPPLIER&TRACKING NO)
     - Column I (8): ETA
   - Batch processing for optimal performance with large datasets
+  - **Smart ETA Calculation**: Automatically calculates ETA as 45 calendar days from loading date when not specified in Google Sheets
 - **Date**: 2025-08-03
 - **Automatic Data Cleanup**: Implemented 90-day data retention policy
   - Tracking data automatically deleted after 90 days from upload

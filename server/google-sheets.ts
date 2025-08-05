@@ -224,6 +224,27 @@ export class GoogleSheetsService {
       return index >= 0 && row[index] !== undefined && row[index] !== null ? row[index].toString().trim() : "";
     };
 
+    // Helper function to calculate ETA (45 days from loading date)
+    const calculateEtaFromLoading = (loadingDate: string) => {
+      if (!loadingDate) return "";
+      
+      try {
+        const loading = new Date(loadingDate);
+        if (isNaN(loading.getTime())) return "";
+        
+        // Add 45 calendar days
+        const eta = new Date(loading);
+        eta.setDate(eta.getDate() + 45);
+        
+        const year = eta.getFullYear();
+        const month = String(eta.getMonth() + 1).padStart(2, '0');
+        const day = String(eta.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch (error) {
+        return "";
+      }
+    };
+
     return dataRows.map(row => {
       const trackingNumber = getValue(row, columnIndices.trackingNumber);
       const shippingMark = getValue(row, columnIndices.shippingMark);
@@ -233,13 +254,19 @@ export class GoogleSheetsService {
         return null;
       }
 
+      const dateLoaded = processDate(getValue(row, columnIndices.dateLoaded));
+      const providedEta = processDate(getValue(row, columnIndices.eta));
+      
+      // Use provided ETA if available, otherwise calculate from loading date + 45 days
+      const finalEta = providedEta || calculateEtaFromLoading(dateLoaded);
+
       return {
         trackingNumber: trackingNumber || "",
         cbm: getValue(row, columnIndices.cbm),
         quantity: getValue(row, columnIndices.quantity),
         dateReceived: processDate(getValue(row, columnIndices.dateReceived)),
-        dateLoaded: processDate(getValue(row, columnIndices.dateLoaded)),
-        eta: processDate(getValue(row, columnIndices.eta)),
+        dateLoaded: dateLoaded,
+        eta: finalEta,
         status: getValue(row, columnIndices.status),
         shippingMark: shippingMark || "",
       };
