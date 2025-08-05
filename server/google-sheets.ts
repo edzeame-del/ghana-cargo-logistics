@@ -194,7 +194,21 @@ export class GoogleSheetsService {
         return dateValue.trim();
       }
 
-      // Handle Excel date serial numbers - Google Sheets API provides them as numbers
+      // FIRST: Handle string patterns before numeric conversion
+      if (typeof dateValue === 'string' && dateValue.trim()) {
+        let dateStr = dateValue.trim();
+        
+        // Handle Google Sheets format like "2025/6/2" by converting to proper format
+        if (dateStr.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
+          const parts = dateStr.split('/');
+          const year = parts[0];
+          const month = parts[1].padStart(2, '0');
+          const day = parts[2].padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      }
+
+      // THEN: Handle Excel date serial numbers - Google Sheets API provides them as numbers
       const numericValue = typeof dateValue === 'string' ? parseFloat(dateValue) : dateValue;
       
       if (typeof numericValue === 'number' && !isNaN(numericValue)) {
@@ -223,18 +237,9 @@ export class GoogleSheetsService {
         }
       }
 
-      // Try to parse as regular date string
+      // FINALLY: Try to parse as regular date string
       if (typeof dateValue === 'string' && dateValue.trim()) {
         let dateStr = dateValue.trim();
-        
-        // Handle Google Sheets format like "2025/6/2" by converting to proper format
-        if (dateStr.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
-          const parts = dateStr.split('/');
-          const year = parts[0];
-          const month = parts[1].padStart(2, '0');
-          const day = parts[2].padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        }
         
         // Handle formats like "4th April" by adding current year
         if (dateStr.match(/^\d+(st|nd|rd|th)\s+\w+$/i)) {

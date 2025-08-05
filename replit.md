@@ -83,7 +83,10 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
     - Column I (8): ETA
   - Batch processing for optimal performance with large datasets
   - **Smart ETA Calculation**: Automatically calculates ETA as 45 calendar days from loading date when not specified in Google Sheets
-  - **Date Format Handling**: Fixed Google Sheets date parsing to properly handle YYYY/M/D format from spreadsheet
+  - **Date Format Handling**: FULLY RESOLVED Google Sheets date parsing to properly handle YYYY/M/D format from spreadsheet
+    - Fixed critical issue where parseFloat('2025/6/2') returned 2025 and triggered incorrect Unix epoch conversion
+    - Reordered parsing logic to check string patterns BEFORE numeric conversion
+    - All dates now correctly display as 2025 instead of 1975
 - **Date**: 2025-08-03
 - **Automatic Data Cleanup**: Implemented 90-day data retention policy
   - Tracking data automatically deleted after 90 days from upload
