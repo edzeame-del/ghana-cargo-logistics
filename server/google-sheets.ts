@@ -298,6 +298,14 @@ export class GoogleSheetsService {
         const eta = new Date(loading);
         eta.setDate(eta.getDate() + 45);
         
+        // Check if ETA falls on weekend (Saturday = 6, Sunday = 0)
+        const dayOfWeek = eta.getDay();
+        if (dayOfWeek === 0) { // Sunday
+          eta.setDate(eta.getDate() + 1); // Move to Monday
+        } else if (dayOfWeek === 6) { // Saturday
+          eta.setDate(eta.getDate() + 2); // Move to Monday
+        }
+        
         const year = eta.getFullYear();
         const month = String(eta.getMonth() + 1).padStart(2, '0');
         const day = String(eta.getDate()).padStart(2, '0');
