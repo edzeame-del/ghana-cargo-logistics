@@ -32,9 +32,58 @@ setInterval(cleanupOldTrackingData, 24 * 60 * 60 * 1000);
 // Run cleanup on server start
 cleanupOldTrackingData();
 
+// Database warmup function to prevent cold starts
+async function warmupDatabase() {
+  try {
+    console.log('Warming up database connection...');
+    await db.query.trackingData.findFirst({
+      where: eq(trackingData.id, -1) // This will return no results but warms up the connection
+    });
+    console.log('Database connection warmed up successfully');
+  } catch (error) {
+    console.error('Database warmup failed:', error);
+  }
+}
+
+// Warmup database on server start
+warmupDatabase();
+
+// Keep database connection alive with periodic health checks
+setInterval(async () => {
+  try {
+    await db.query.trackingData.findFirst({
+      where: eq(trackingData.id, -1)
+    });
+  } catch (error) {
+    console.error('Database health check failed:', error);
+  }
+}, 4 * 60 * 1000); // Every 4 minutes to prevent 5-minute timeout
+
 export function registerRoutes(app: Express): Server {
   // Setup authentication
   setupAuth(app);
+
+  // Database health check endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      await db.query.trackingData.findFirst({
+        where: eq(trackingData.id, -1)
+      });
+      res.json({ 
+        status: "healthy", 
+        timestamp: new Date().toISOString(),
+        database: "connected" 
+      });
+    } catch (error) {
+      console.error("Health check failed:", error);
+      res.status(503).json({ 
+        status: "unhealthy", 
+        timestamp: new Date().toISOString(),
+        database: "disconnected",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
   // Contact form submission
   app.post("/api/contact", async (req, res) => {
     try {
@@ -286,50 +335,63 @@ export function registerRoutes(app: Express): Server {
 
   // Track by tracking number(s) - supports comma-separated list and returns all matches
   app.get("/api/tracking/:number", async (req, res) => {
-    try {
-      const { number } = req.params;
-      const trackingNumbers = number.split(',').map(n => n.trim()).filter(n => n.length > 0);
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const { number } = req.params;
+        const trackingNumbers = number.split(',').map(n => n.trim()).filter(n => n.length > 0);
 
-      if (trackingNumbers.length === 0) {
-        return res.status(400).json({ message: "No valid tracking numbers provided" });
-      }
-
-      let allResults = [];
-
-      for (const trackingNum of trackingNumbers) {
-        let results;
-        if (trackingNum.length === 6) {
-          // Search by last 6 digits - find all matches
-          results = await db.query.trackingData.findMany({
-            where: like(trackingData.trackingNumber, `%${trackingNum}`),
-            orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
-          });
-        } else {
-          // Search by full tracking number - find all matches
-          results = await db.query.trackingData.findMany({
-            where: eq(trackingData.trackingNumber, trackingNum),
-            orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
-          });
+        if (trackingNumbers.length === 0) {
+          return res.status(400).json({ message: "No valid tracking numbers provided" });
         }
 
-        if (results && results.length > 0) {
-          allResults.push(...results);
+        let allResults = [];
+
+        for (const trackingNum of trackingNumbers) {
+          let results;
+          if (trackingNum.length === 6) {
+            // Search by last 6 digits - find all matches
+            results = await db.query.trackingData.findMany({
+              where: like(trackingData.trackingNumber, `%${trackingNum}`),
+              orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+            });
+          } else {
+            // Search by full tracking number - find all matches
+            results = await db.query.trackingData.findMany({
+              where: eq(trackingData.trackingNumber, trackingNum),
+              orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+            });
+          }
+
+          if (results && results.length > 0) {
+            allResults.push(...results);
+          }
         }
+
+        if (allResults.length === 0) {
+          return res.status(404).json({ message: "No tracking numbers found" });
+        }
+
+        // Remove duplicates based on ID (in case same tracking number appears in multiple searches)
+        const uniqueResults = allResults.filter((item, index, arr) => 
+          arr.findIndex(t => t.id === item.id) === index
+        );
+
+        return res.json(uniqueResults);
+      } catch (error) {
+        attempt++;
+        console.error(`Tracking search attempt ${attempt} failed:`, error);
+        
+        // If this was the last attempt, return error
+        if (attempt >= maxRetries) {
+          return res.status(500).json({ message: "Database temporarily unavailable. Please try again." });
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
       }
-
-      if (allResults.length === 0) {
-        return res.status(404).json({ message: "No tracking numbers found" });
-      }
-
-      // Remove duplicates based on ID (in case same tracking number appears in multiple searches)
-      const uniqueResults = allResults.filter((item, index, arr) => 
-        arr.findIndex(t => t.id === item.id) === index
-      );
-
-      res.json(uniqueResults);
-    } catch (error) {
-      console.error("Failed to fetch tracking data:", error);
-      res.status(500).json({ message: "Failed to fetch tracking data" });
     }
   });
 
