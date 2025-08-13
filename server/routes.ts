@@ -3,23 +3,32 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
-import { eq, like, or, lt, inArray } from "drizzle-orm";
+import { eq, like, or, lt, inArray, and, ne } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { googleSheetsService } from "./google-sheets";
 
-// Cleanup function to delete tracking data older than 90 days
+// Cleanup function to delete tracking data 90 days after ETA
 async function cleanupOldTrackingData() {
   try {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0]; // YYYY-MM-DD format
     
+    // Delete records where ETA is older than 90 days
+    // Only delete records that have a valid ETA date
     const result = await db
       .delete(trackingData)
-      .where(lt(trackingData.createdAt, ninetyDaysAgo));
+      .where(
+        and(
+          lt(trackingData.eta, ninetyDaysAgoStr),
+          ne(trackingData.eta, ""), // Don't delete records without ETA
+          ne(trackingData.eta, "Not Yet Loaded") // Don't delete pending records
+        )
+      );
     
     const deletedCount = result.rowCount || 0;
     if (deletedCount > 0) {
-      console.log(`Cleaned up ${deletedCount} tracking records older than 90 days`);
+      console.log(`Cleaned up ${deletedCount} tracking records with ETA older than 90 days`);
     }
   } catch (error) {
     console.error("Error during tracking data cleanup:", error);
@@ -413,13 +422,21 @@ export function registerRoutes(app: Express): Server {
     try {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0]; // YYYY-MM-DD format
       
+      // Delete records where ETA is older than 90 days
       const result = await db
         .delete(trackingData)
-        .where(lt(trackingData.createdAt, ninetyDaysAgo));
+        .where(
+          and(
+            lt(trackingData.eta, ninetyDaysAgoStr),
+            ne(trackingData.eta, ""), // Don't delete records without ETA
+            ne(trackingData.eta, "Not Yet Loaded") // Don't delete pending records
+          )
+        );
       
       res.json({ 
-        message: "Cleanup completed successfully", 
+        message: "Cleanup completed successfully - deleted records with ETA older than 90 days", 
         deletedCount: result.rowCount || 0 
       });
     } catch (error) {

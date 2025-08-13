@@ -99,7 +99,8 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - Automatic connection keep-alive every 4 minutes to prevent timeouts
 - **Date**: 2025-08-03
 - **Automatic Data Cleanup**: Implemented 90-day data retention policy
-  - Tracking data automatically deleted after 90 days from upload
+  - Tracking data automatically deleted 90 days after ETA date
+  - Only deletes records with valid ETA dates (preserves pending goods)
   - Scheduled cleanup runs every 24 hours
   - Manual cleanup button in admin interface
   - Server-side cleanup on startup
