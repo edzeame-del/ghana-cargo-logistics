@@ -37,11 +37,12 @@ export default function Tracking() {
 
     try {
       const cleanedSearchTerm = searchTerm.trim().replace(/\s+/g, ','); // Replace spaces with commas
-      const response = await fetch(`/api/tracking/${cleanedSearchTerm}`);
+      const response = await fetch(`/api/tracking/${encodeURIComponent(cleanedSearchTerm)}`);
       
       if (!response.ok) {
         if (response.status === 404) {
-          setError("Tracking number not found. Please check your tracking number and try again.");
+          const errorData = await response.json();
+          setError(errorData.message || "No results found. Please check your search term and try again.");
         } else {
           setError("Something went wrong. Please try again later.");
         }
@@ -104,7 +105,7 @@ export default function Tracking() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     type="text"
-                    placeholder="Enter tracking numbers (comma-separated) or last 6 digits"
+                    placeholder="Enter tracking number or shipping mark"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -115,7 +116,7 @@ export default function Tracking() {
                 </Button>
               </div>
               <p className="text-sm text-gray-500 text-center">
-                You can search using full tracking numbers, last 6 digits, or multiple numbers separated by commas
+                Search by tracking number (full or last 6 digits) or shipping mark (shows goods from past 2 weeks)
               </p>
             </form>
           </CardContent>

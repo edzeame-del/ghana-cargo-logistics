@@ -342,35 +342,72 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Track by tracking number(s) - supports comma-separated list and returns all matches
-  app.get("/api/tracking/:number", async (req, res) => {
+  // Track by tracking number(s) or shipping mark - supports comma-separated list and returns all matches
+  app.get("/api/tracking/:searchTerm", async (req, res) => {
     const maxRetries = 3;
     let attempt = 0;
     
     while (attempt < maxRetries) {
       try {
-        const { number } = req.params;
-        const trackingNumbers = number.split(',').map(n => n.trim()).filter(n => n.length > 0);
+        const { searchTerm } = req.params;
+        const searchItems = searchTerm.split(',').map(n => n.trim()).filter(n => n.length > 0);
 
-        if (trackingNumbers.length === 0) {
-          return res.status(400).json({ message: "No valid tracking numbers provided" });
+        if (searchItems.length === 0) {
+          return res.status(400).json({ message: "No valid search terms provided" });
         }
 
         let allResults = [];
 
-        for (const trackingNum of trackingNumbers) {
-          let results;
-          if (trackingNum.length === 6) {
-            // Search by last 6 digits - find all matches
-            results = await db.query.trackingData.findMany({
-              where: like(trackingData.trackingNumber, `%${trackingNum}`),
-              orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
-            });
+        for (const searchItem of searchItems) {
+          let results = [];
+          
+          // Check if this looks like a tracking number (numeric or alphanumeric with specific patterns)
+          const isLikelyTrackingNumber = /^[A-Z0-9]+$/i.test(searchItem) && searchItem.length >= 6;
+          
+          if (isLikelyTrackingNumber) {
+            // Search as tracking number
+            if (searchItem.length === 6) {
+              // Search by last 6 digits
+              results = await db.query.trackingData.findMany({
+                where: like(trackingData.trackingNumber, `%${searchItem}`),
+                orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+              });
+            } else {
+              // Search by full tracking number
+              results = await db.query.trackingData.findMany({
+                where: eq(trackingData.trackingNumber, searchItem),
+                orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+              });
+            }
           } else {
-            // Search by full tracking number - find all matches
+            // Search as shipping mark - show goods received in past 2 weeks
+            const twoWeeksAgo = new Date();
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+            const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
             results = await db.query.trackingData.findMany({
-              where: eq(trackingData.trackingNumber, trackingNum),
-              orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+              where: and(
+                like(trackingData.shippingMark, `%${searchItem}%`),
+                or(
+                  // Include records received in past 2 weeks (valid date and >= twoWeeksAgo)
+                  and(
+                    ne(trackingData.dateReceived, ""),
+                    ne(trackingData.dateReceived, "N/A"),
+                    ne(trackingData.dateReceived, "null"),
+                    like(trackingData.dateReceived, "20%"), // Valid year starting with 20
+                    or(
+                      eq(trackingData.dateReceived, twoWeeksAgoStr),
+                      like(trackingData.dateReceived, twoWeeksAgoStr.substring(0, 8) + "%"), // Same date or later in month
+                      like(trackingData.dateReceived, "2025-08-%"), // Current month
+                      like(trackingData.dateReceived, "2025-09-%"), // Next month
+                      like(trackingData.dateReceived, "2025-07-%")  // Previous month
+                    )
+                  ),
+                  // Always include pending goods
+                  eq(trackingData.status, "Pending Loading")
+                )
+              ),
+              orderBy: (trackingData, { desc }) => [desc(trackingData.dateReceived), desc(trackingData.createdAt)],
             });
           }
 
@@ -380,10 +417,12 @@ export function registerRoutes(app: Express): Server {
         }
 
         if (allResults.length === 0) {
-          return res.status(404).json({ message: "No tracking numbers found" });
+          const searchType = searchItems.some(item => /^[A-Z0-9]+$/i.test(item) && item.length >= 6) 
+            ? "tracking numbers" : "shipping marks";
+          return res.status(404).json({ message: `No ${searchType} found` });
         }
 
-        // Remove duplicates based on ID (in case same tracking number appears in multiple searches)
+        // Remove duplicates based on ID
         const uniqueResults = allResults.filter((item, index, arr) => 
           arr.findIndex(t => t.id === item.id) === index
         );
@@ -391,14 +430,12 @@ export function registerRoutes(app: Express): Server {
         return res.json(uniqueResults);
       } catch (error) {
         attempt++;
-        console.error(`Tracking search attempt ${attempt} failed:`, error);
+        console.error(`Search attempt ${attempt} failed:`, error);
         
-        // If this was the last attempt, return error
         if (attempt >= maxRetries) {
           return res.status(500).json({ message: "Database temporarily unavailable. Please try again." });
         }
         
-        // Wait before retrying (exponential backoff)
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
       }
     }

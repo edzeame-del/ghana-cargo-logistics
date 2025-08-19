@@ -115,10 +115,11 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 - **Duplicate Tracking Numbers**: Removed unique constraint to allow duplicate tracking numbers
   - Multiple shipments with same tracking number now supported
   - Search returns all matching entries with clear numbering
-- **Multi-Search Capability**: Added comma-separated tracking number search
-  - Support for "000001,000860" format searches
+- **Enhanced Search Capability**: Added dual search functionality
+  - Support for tracking numbers: full numbers, last 6 digits, comma-separated
+  - Support for shipping marks: shows goods received in past 2 weeks + all pending goods
+  - Intelligent search type detection (alphanumeric = tracking number, text = shipping mark)
   - Space-to-comma conversion for user convenience
-  - Display multiple results with separators
 - **Spreadsheet Tracking System**: Comprehensive Excel/Google Sheets-based cargo tracking system
   - Admin Excel/Google Sheets upload with validation and preview at `/admin/tracking`
   - Support for .xlsx, .xls, and .ods file formats
