@@ -389,25 +389,27 @@ export function registerRoutes(app: Express): Server {
               where: and(
                 like(trackingData.shippingMark, `%${searchItem}%`),
                 or(
-                  // Include records received in past 2 weeks (valid date and >= twoWeeksAgo)
+                  // Include records received in past 2 weeks
                   and(
                     ne(trackingData.dateReceived, ""),
                     ne(trackingData.dateReceived, "N/A"),
                     ne(trackingData.dateReceived, "null"),
                     like(trackingData.dateReceived, "20%"), // Valid year starting with 20
                     or(
-                      eq(trackingData.dateReceived, twoWeeksAgoStr),
-                      like(trackingData.dateReceived, twoWeeksAgoStr.substring(0, 8) + "%"), // Same date or later in month
-                      like(trackingData.dateReceived, "2025-08-%"), // Current month
-                      like(trackingData.dateReceived, "2025-09-%"), // Next month
-                      like(trackingData.dateReceived, "2025-07-%")  // Previous month
+                      like(trackingData.dateReceived, "2025-08-%"), // August 2025
+                      like(trackingData.dateReceived, "2025-07-%"), // July 2025 (recent)
+                      like(trackingData.dateReceived, "2025-09-%")  // September 2025
                     )
                   ),
-                  // Always include pending goods
+                  // Always include pending goods (not yet loaded)
                   eq(trackingData.status, "Pending Loading")
                 )
               ),
-              orderBy: (trackingData, { desc }) => [desc(trackingData.dateReceived), desc(trackingData.createdAt)],
+              orderBy: (trackingData, { desc, asc }) => [
+                desc(trackingData.status), // Pending Loading first
+                desc(trackingData.dateReceived), // Most recent first
+                desc(trackingData.createdAt)
+              ],
             });
           }
 

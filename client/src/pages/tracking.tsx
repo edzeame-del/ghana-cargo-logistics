@@ -132,6 +132,18 @@ export default function Tracking() {
         {/* Tracking Results */}
         {trackingData.length > 0 && (
           <div className="space-y-6">
+            {trackingData.length > 1 && (
+              <div className="text-center">
+                <p className="text-lg font-semibold text-gray-700">
+                  Found {trackingData.length} shipments
+                </p>
+                <p className="text-sm text-gray-500">
+                  {trackingData.filter(d => d.status === "Pending Loading").length > 0 && 
+                    `${trackingData.filter(d => d.status === "Pending Loading").length} pending, `}
+                  {trackingData.filter(d => d.status !== "Pending Loading").length} shipped
+                </p>
+              </div>
+            )}
             {trackingData.map((data, index) => (
               <div key={data.id} className="space-y-6">
                 {/* Status Header */}
