@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
-import { eq, like, or, lt, inArray, and, ne } from "drizzle-orm";
+import { eq, like, or, lt, inArray, and, ne, ilike } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { googleSheetsService } from "./google-sheets";
 
@@ -387,7 +387,7 @@ export function registerRoutes(app: Express): Server {
             
             results = await db.query.trackingData.findMany({
               where: and(
-                like(trackingData.shippingMark, `%${searchItem}%`),
+                ilike(trackingData.shippingMark, `%${searchItem}%`),
                 or(
                   // Include records received in past 2 weeks
                   and(
