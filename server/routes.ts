@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
-import { eq, like, or, lt, inArray, and, ne, ilike } from "drizzle-orm";
+import { eq, like, or, lt, inArray, and, ne, ilike, count } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { googleSheetsService } from "./google-sheets";
 
@@ -443,13 +443,34 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get all tracking data (for admin)
+  // Get all tracking data (for admin) with pagination
   app.get("/api/tracking", async (req, res) => {
     try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 200;
+      const offset = (page - 1) * limit;
+
+      // Get total count for pagination
+      const [{ count: totalCount }] = await db.select({ count: count() }).from(trackingData);
+      
+      // Get paginated data
       const allData = await db.query.trackingData.findMany({
         orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+        limit: limit,
+        offset: offset,
       });
-      res.json(allData);
+
+      res.json({
+        data: allData,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNext: page < Math.ceil(totalCount / limit),
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
       console.error("Failed to fetch tracking data:", error);
       res.status(500).json({ message: "Failed to fetch tracking data" });
