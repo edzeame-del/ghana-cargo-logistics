@@ -54,9 +54,9 @@ export class GoogleSheetsService {
   private startPeriodicSync() {
     if (!this.isConfigured) return;
 
-    // Sync every 15 minutes
-    cron.schedule('*/15 * * * *', async () => {
-      console.log('Starting scheduled Google Sheets sync...');
+    // Sync every day at 11pm
+    cron.schedule('0 23 * * *', async () => {
+      console.log('Starting scheduled Google Sheets sync at 11pm...');
       await this.syncData();
     });
 
