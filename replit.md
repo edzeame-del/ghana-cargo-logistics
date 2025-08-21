@@ -141,6 +141,11 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 - Database migrations handled via `npm run db:push`
 - All components use shadcn/ui for consistency
 
+## Deployment
+- DigitalOcean deployment guide available in `DIGITALOCEAN_DEPLOYMENT_GUIDE.md`
+- Supports both App Platform and Droplet deployment methods
+- Requires PostgreSQL database and environment variables for production
+
 ## Current Status
 - ✅ Vessel management system fully functional
 - ✅ Admin CRUD operations working
