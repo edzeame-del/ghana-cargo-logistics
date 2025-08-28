@@ -63,11 +63,18 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
    - Pagination support (200 records per page) for large datasets
    - Pattern analysis for optimizing search functionality
 
-3. **Tracking Page** (`/tracking`):
+3. **Admin Database Search** (`/admin/database-search`):
+   - Direct search interface for the tracking database
+   - Search by tracking number or shipping mark with auto-detection
+   - Real-time search results with full record details
+   - Complete tracking information display with status badges
+   - Error handling for failed searches and network issues
+
+4. **Tracking Page** (`/tracking`):
    - **CLEAN SLATE**: Completely cleared for new implementation
    - Ready for fresh tracking concept
 
-4. **Static Pages**:
+5. **Static Pages**:
    - Home page with hero section
    - Services overview
    - Contact form
