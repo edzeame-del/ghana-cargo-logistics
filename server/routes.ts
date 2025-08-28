@@ -559,7 +559,7 @@ export function registerRoutes(app: Express): Server {
               });
               
               // Get total count for pagination
-              const countResult = await db.select({ count: count() }).from(trackingData)
+              const countResult = await db.select({ count: sql<number>`count(*)` }).from(trackingData)
                 .where(like(trackingData.trackingNumber, `%${searchItem}`));
               count = countResult[0]?.count || 0;
             } else {
@@ -572,7 +572,7 @@ export function registerRoutes(app: Express): Server {
               });
               
               // Get total count for pagination
-              const countResult = await db.select({ count: count() }).from(trackingData)
+              const countResult = await db.select({ count: sql<number>`count(*)` }).from(trackingData)
                 .where(eq(trackingData.trackingNumber, searchItem));
               count = countResult[0]?.count || 0;
             }
@@ -590,7 +590,7 @@ export function registerRoutes(app: Express): Server {
             });
             
             // Get total count for pagination
-            const countResult = await db.select({ count: count() }).from(trackingData)
+            const countResult = await db.select({ count: sql<number>`count(*)` }).from(trackingData)
               .where(ilike(trackingData.shippingMark, `%${searchItem}%`));
             count = countResult[0]?.count || 0;
           }
@@ -674,7 +674,7 @@ export function registerRoutes(app: Express): Server {
         const dateKey = date.toISOString().split('T')[0];
 
         hourlyData[hour][dayOfWeek]++;
-        dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + 1;
+        dailyTotals[dateKey] = ((dailyTotals as Record<string, number>)[dateKey] || 0) + 1;
       });
 
       // Find max value for normalization
@@ -838,7 +838,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const httpServer = createServer(app);
   // Health check endpoint for Google Cloud
   app.get('/api/health', (req, res) => {
     res.status(200).json({ 
@@ -848,6 +847,8 @@ export function registerRoutes(app: Express): Server {
       version: process.env.npm_package_version || '1.0.0'
     });
   });
+
+  const httpServer = createServer(app);
 
   return httpServer;
 }
