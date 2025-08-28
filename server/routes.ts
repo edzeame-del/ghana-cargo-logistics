@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
 import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
-import { eq, like, or, lt, inArray, and, ne, ilike, count } from "drizzle-orm";
+import { eq, like, or, lt, inArray, and, ne, ilike, count, sql, gte } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { googleSheetsService } from "./google-sheets";
 
@@ -361,8 +361,8 @@ export function registerRoutes(app: Express): Server {
         for (const searchItem of searchItems) {
           let results = [];
           
-          // Check if this looks like a tracking number (numeric or alphanumeric with specific patterns)
-          const isLikelyTrackingNumber = /^[A-Z0-9]+$/i.test(searchItem) && searchItem.length >= 6;
+          // Check if this looks like a tracking number (must contain numbers, not just letters)
+          const isLikelyTrackingNumber = /^[A-Z0-9]+$/i.test(searchItem) && searchItem.length >= 6 && /\d/.test(searchItem);
           
           if (isLikelyTrackingNumber) {
             // Search as tracking number
@@ -380,7 +380,7 @@ export function registerRoutes(app: Express): Server {
               });
             }
           } else {
-            // Search as shipping mark - show goods received in past 2 weeks
+            // Search as shipping mark - show goods received in past 2 weeks + pending goods
             const twoWeeksAgo = new Date();
             twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
             const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -389,18 +389,8 @@ export function registerRoutes(app: Express): Server {
               where: and(
                 ilike(trackingData.shippingMark, `%${searchItem}%`),
                 or(
-                  // Include records received in past 2 weeks
-                  and(
-                    ne(trackingData.dateReceived, ""),
-                    ne(trackingData.dateReceived, "N/A"),
-                    ne(trackingData.dateReceived, "null"),
-                    like(trackingData.dateReceived, "20%"), // Valid year starting with 20
-                    or(
-                      like(trackingData.dateReceived, "2025-08-%"), // August 2025
-                      like(trackingData.dateReceived, "2025-07-%"), // July 2025 (recent)
-                      like(trackingData.dateReceived, "2025-09-%")  // September 2025
-                    )
-                  ),
+                  // Include records received in past 2 weeks (proper date comparison)
+                  gte(trackingData.dateReceived, twoWeeksAgoStr),
                   // Always include pending goods (not yet loaded)
                   eq(trackingData.status, "Pending Loading")
                 )
