@@ -1,0 +1,226 @@
+/* Mobile-responsive styles for admin panels */
+
+/* Admin Navigation Mobile Enhancements */
+.admin-nav-mobile {
+  @apply lg:hidden;
+}
+
+.admin-nav-desktop {
+  @apply hidden lg:flex;
+}
+
+/* Responsive Grid Systems */
+.stats-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4;
+}
+
+.filter-layout {
+  @apply flex flex-col sm:flex-row gap-4;
+}
+
+.filter-controls {
+  @apply flex flex-col sm:flex-row gap-2;
+}
+
+/* Mobile Table Cards */
+.mobile-card-container {
+  @apply lg:hidden space-y-3;
+}
+
+.mobile-card {
+  @apply border rounded-lg overflow-hidden bg-card;
+}
+
+.mobile-card-header {
+  @apply px-4 py-3 border-b bg-muted/30;
+}
+
+.mobile-card-content {
+  @apply px-4 py-3;
+}
+
+.mobile-data-row {
+  @apply flex justify-between items-start py-2 border-b border-gray-100 last:border-0;
+}
+
+.mobile-data-label {
+  @apply text-sm font-medium text-muted-foreground min-w-0 flex-shrink-0 mr-3;
+}
+
+.mobile-data-value {
+  @apply text-sm text-right min-w-0 flex-1;
+}
+
+/* Desktop Table */
+.desktop-table {
+  @apply hidden lg:block;
+}
+
+/* Responsive Typography */
+.page-title {
+  @apply text-2xl md:text-3xl font-bold text-foreground;
+}
+
+.page-description {
+  @apply text-sm md:text-base text-muted-foreground;
+}
+
+.section-title {
+  @apply text-lg md:text-xl font-semibold;
+}
+
+/* Responsive Spacing */
+.container-padding {
+  @apply px-4 py-4 md:py-8;
+}
+
+.section-margin {
+  @apply mb-6 md:mb-8;
+}
+
+/* Button Responsiveness */
+.responsive-button {
+  @apply w-full sm:w-auto;
+}
+
+.mobile-full-button {
+  @apply w-full lg:w-auto justify-center lg:justify-start;
+}
+
+/* Card Responsiveness */
+.responsive-card {
+  @apply border rounded-lg overflow-hidden;
+}
+
+.responsive-card-header {
+  @apply px-4 sm:px-6 py-4 border-b;
+}
+
+.responsive-card-content {
+  @apply px-4 sm:px-6 py-4;
+}
+
+/* Form Responsiveness */
+.responsive-form-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+.responsive-input {
+  @apply w-full;
+}
+
+/* Heat Map Responsiveness */
+.heatmap-container {
+  @apply overflow-x-auto;
+}
+
+.heatmap-grid {
+  @apply min-w-[320px] sm:min-w-[600px] lg:min-w-[800px];
+}
+
+/* Statistics Cards */
+.stat-card {
+  @apply border rounded-lg p-4;
+}
+
+.stat-card-title {
+  @apply text-xs sm:text-sm font-medium text-muted-foreground mb-2;
+}
+
+.stat-card-value {
+  @apply text-xl sm:text-2xl font-bold;
+}
+
+/* Pagination */
+.pagination-container {
+  @apply flex flex-col sm:flex-row items-center justify-between gap-4;
+}
+
+.pagination-info {
+  @apply text-sm text-muted-foreground text-center sm:text-left;
+}
+
+.pagination-controls {
+  @apply flex items-center gap-2;
+}
+
+/* Responsive Utilities */
+.hide-mobile {
+  @apply hidden sm:block;
+}
+
+.hide-desktop {
+  @apply block sm:hidden;
+}
+
+.mobile-only {
+  @apply sm:hidden;
+}
+
+.desktop-only {
+  @apply hidden sm:block;
+}
+
+/* Loading States */
+.loading-container {
+  @apply flex items-center justify-center min-h-[200px] sm:min-h-[400px];
+}
+
+/* Error States */
+.error-container {
+  @apply text-center p-8;
+}
+
+.error-icon {
+  @apply h-12 w-12 mx-auto mb-4 text-destructive;
+}
+
+/* Touch-friendly Interactive Elements */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+}
+
+/* Responsive Overflow Handling */
+.text-overflow-mobile {
+  @apply truncate sm:whitespace-normal;
+}
+
+.scroll-container {
+  @apply overflow-x-auto;
+}
+
+/* Mobile Menu Enhancements */
+.mobile-menu {
+  @apply w-80;
+}
+
+.mobile-menu-header {
+  @apply flex items-center justify-between pb-6 border-b;
+}
+
+.mobile-menu-nav {
+  @apply flex flex-col space-y-1 flex-1 py-6;
+}
+
+.mobile-menu-footer {
+  @apply border-t pt-6 space-y-3;
+}
+
+.mobile-nav-item {
+  @apply w-full justify-start gap-3 h-12 px-4;
+}
+
+/* Responsive Dialogs */
+.responsive-dialog {
+  @apply w-full max-w-md mx-4 sm:mx-auto;
+}
+
+/* Badge Responsiveness */
+.responsive-badge {
+  @apply text-xs sm:text-sm;
+}
+
+/* Icon Sizing */
+.responsive-icon {
+  @apply h-4 w-4 sm:h-5 sm:w-5;
+}

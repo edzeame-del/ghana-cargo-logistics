@@ -134,15 +134,15 @@ export default function SearchLogsPage() {
             <h2 className="text-xl font-semibold mb-4 text-foreground">
               Today's Search Activity ({format(new Date(), 'MMM dd, yyyy')})
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Card className="border-blue-200 bg-blue-50/50">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Today's Searches</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Today's Searches</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-2">
                     <Search className="h-4 w-4 text-blue-500" />
-                    <span className="text-2xl font-bold text-blue-600">{dailyStats.totalSearches}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-blue-600">{dailyStats.totalSearches}</span>
                   </div>
                 </CardContent>
               </Card>
