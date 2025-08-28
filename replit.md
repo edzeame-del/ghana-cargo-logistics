@@ -57,8 +57,10 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 2. **Admin Search Logs** (`/admin/search-logs`):
    - Comprehensive search monitoring and analytics
    - Real-time statistics: total searches, success rate, search type breakdown
+   - Daily and all-time metrics with automatic midnight reset
    - Advanced filtering by search term, type, and success status
    - Detailed logs with IP addresses, timestamps, and result counts
+   - Pagination support (200 records per page) for large datasets
    - Pattern analysis for optimizing search functionality
 
 3. **Tracking Page** (`/tracking`):
@@ -77,8 +79,10 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - All search attempts automatically logged to database with success/failure tracking
   - Tracks search term, type (tracking_number vs shipping_mark), results count, IP address, and timestamp
   - Admin interface at `/admin/search-logs` with filtering and statistics
+  - **Daily Metrics**: Automatic daily search tracking that resets at midnight
+  - **Pagination**: 200 records per page with navigation controls
   - Real-time success rate monitoring and search pattern analysis
-  - Shows last 500 searches with filters by search type, success status, and search terms
+  - Dual statistics display: today's activity and all-time totals
   - Visual statistics cards showing total searches, success rate, and search type breakdown
 - **Date**: 2025-08-05
 - **Bulk Delete Functionality**: Added multi-select bulk delete for tracking records

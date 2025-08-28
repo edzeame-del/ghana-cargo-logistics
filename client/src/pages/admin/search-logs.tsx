@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, TrendingUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Search, TrendingUp, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminNav from "@/components/admin/admin-nav";
@@ -45,6 +46,8 @@ export default function SearchLogsPage() {
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [successFilter, setSuccessFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(200);
 
   const { data: searchLogsData, isLoading, error } = useQuery<SearchLogsResponse>({
     queryKey: ["/api/search-logs"],
@@ -76,6 +79,17 @@ export default function SearchLogsPage() {
 
     return matchesSearch && matchesType && matchesSuccess;
   }) || [];
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchFilter, typeFilter, successFilter]);
 
   if (isLoading) {
     return (
@@ -297,8 +311,42 @@ export default function SearchLogsPage() {
 
       {/* Search Logs Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Searches ({filteredLogs.length} of {searchLogs?.length || 0})</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>
+            Search Logs ({filteredLogs.length} of {searchLogs?.length || 0})
+            {totalPages > 1 && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                Page {currentPage} of {totalPages} ({paginatedLogs.length} records)
+              </span>
+            )}
+          </CardTitle>
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center space-x-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Previous</span>
+              </Button>
+              <span className="text-sm text-muted-foreground px-2">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center space-x-1"
+              >
+                <span>Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -314,15 +362,17 @@ export default function SearchLogsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.length === 0 ? (
+                {paginatedLogs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
                       <div className="flex flex-col items-center space-y-2">
                         <Search className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-muted-foreground">No search logs found</p>
+                        <p className="text-muted-foreground">
+                          {filteredLogs.length === 0 ? "No search logs found" : "No results on this page"}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {searchFilter || typeFilter !== "all" || successFilter !== "all" 
-                            ? "Try adjusting your filters" 
+                            ? "Try adjusting your filters or go to a different page" 
                             : "Search logs will appear here as users search for tracking data"
                           }
                         </p>
@@ -330,7 +380,7 @@ export default function SearchLogsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredLogs.map((log) => (
+                  paginatedLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="font-mono font-medium">
                         {log.searchTerm}
@@ -362,6 +412,60 @@ export default function SearchLogsPage() {
               </TableBody>
             </Table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} of {filteredLogs.length} filtered results
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center space-x-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Previous</span>
+                </Button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center space-x-1"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       </div>
