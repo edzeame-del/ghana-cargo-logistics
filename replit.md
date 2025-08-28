@@ -16,7 +16,9 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 
 ### Database Schema
 - **vessels**: Stores vessel information (id, name, imo, mmsi, trackingUrl, thumbnailUrl, timestamps)
-- **users**: Basic user authentication structure (currently unused)
+- **users**: Basic user authentication structure for admin access
+- **tracking_data**: Comprehensive cargo tracking with columns: id, shippingMark, dateReceived, dateLoaded, quantity, cbm, trackingNumber, eta, status, timestamps
+- **search_logs**: Search monitoring with columns: id, searchTerm, searchType, success, resultsCount, ipAddress, userAgent, timestamp
 
 ### API Routes
 **Vessel Management:**
@@ -38,6 +40,9 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 - `GET /api/google-sheets/status` - Get integration status and last sync time
 - `POST /api/google-sheets/sync` - Trigger manual sync from Google Sheets
 
+**Search Logging:**
+- `GET /api/search-logs` - Get recent search logs for admin analysis
+
 **General:**
 - `POST /api/contact` - Contact form submission
 - `POST /api/service-request` - Service request form submission
@@ -49,17 +54,32 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
    - Delete vessels with confirmation dialog
    - Real-time form validation
 
-2. **Tracking Page** (`/tracking`):
+2. **Admin Search Logs** (`/admin/search-logs`):
+   - Comprehensive search monitoring and analytics
+   - Real-time statistics: total searches, success rate, search type breakdown
+   - Advanced filtering by search term, type, and success status
+   - Detailed logs with IP addresses, timestamps, and result counts
+   - Pattern analysis for optimizing search functionality
+
+3. **Tracking Page** (`/tracking`):
    - **CLEAN SLATE**: Completely cleared for new implementation
    - Ready for fresh tracking concept
 
-3. **Static Pages**:
+4. **Static Pages**:
    - Home page with hero section
    - Services overview
    - Contact form
    - Terms and conditions
 
 ## Recent Changes
+- **Date**: 2025-08-28
+- **Search Logging System**: Comprehensive admin search monitoring implemented
+  - All search attempts automatically logged to database with success/failure tracking
+  - Tracks search term, type (tracking_number vs shipping_mark), results count, IP address, and timestamp
+  - Admin interface at `/admin/search-logs` with filtering and statistics
+  - Real-time success rate monitoring and search pattern analysis
+  - Shows last 500 searches with filters by search type, success status, and search terms
+  - Visual statistics cards showing total searches, success rate, and search type breakdown
 - **Date**: 2025-08-05
 - **Bulk Delete Functionality**: Added multi-select bulk delete for tracking records
   - Individual and "select all" checkboxes in admin tracking table

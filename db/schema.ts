@@ -46,3 +46,19 @@ export const insertTrackingDataSchema = createInsertSchema(trackingData);
 export const selectTrackingDataSchema = createSelectSchema(trackingData);
 export type InsertTrackingData = typeof trackingData.$inferInsert;
 export type SelectTrackingData = typeof trackingData.$inferSelect;
+
+export const searchLogs = pgTable("search_logs", {
+  id: serial("id").primaryKey(),
+  searchTerm: text("search_term").notNull(),
+  searchType: text("search_type").notNull(), // 'tracking_number' or 'shipping_mark'
+  success: boolean("success").notNull(),
+  resultsCount: integer("results_count").notNull().default(0),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertSearchLogSchema = createInsertSchema(searchLogs);
+export const selectSearchLogSchema = createSelectSchema(searchLogs);
+export type InsertSearchLog = typeof searchLogs.$inferInsert;
+export type SelectSearchLog = typeof searchLogs.$inferSelect;

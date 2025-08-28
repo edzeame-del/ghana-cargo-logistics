@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Ship, Package, LogOut } from "lucide-react";
+import { Ship, Package, LogOut, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import ChangePasswordDialog from "./change-password-dialog";
 
@@ -33,6 +33,16 @@ export default function AdminNav() {
               >
                 <Package className="h-4 w-4" />
                 Tracking Data
+              </Button>
+            </Link>
+            <Link href="/admin/search-logs">
+              <Button 
+                variant={location === "/admin/search-logs" ? "default" : "outline"}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Search className="h-4 w-4" />
+                Search Logs
               </Button>
             </Link>
             </div>

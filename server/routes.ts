@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
-import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema } from "@db/schema";
+import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema, searchLogs, insertSearchLogSchema } from "@db/schema";
 import { eq, like, or, lt, inArray, and, ne, ilike, count, sql, gte } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { googleSheetsService } from "./google-sheets";
@@ -357,14 +357,18 @@ export function registerRoutes(app: Express): Server {
         }
 
         let allResults = [];
+        const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+        const userAgent = req.get('User-Agent') || 'unknown';
 
         for (const searchItem of searchItems) {
           let results = [];
+          let searchType = '';
           
           // Check if this looks like a tracking number (must contain numbers, not just letters)
           const isLikelyTrackingNumber = /^[A-Z0-9]+$/i.test(searchItem) && searchItem.length >= 6 && /\d/.test(searchItem);
           
           if (isLikelyTrackingNumber) {
+            searchType = 'tracking_number';
             // Search as tracking number
             if (searchItem.length === 6) {
               // Search by last 6 digits
@@ -380,6 +384,7 @@ export function registerRoutes(app: Express): Server {
               });
             }
           } else {
+            searchType = 'shipping_mark';
             // Search as shipping mark - show goods received in past 2 weeks + pending goods
             const twoWeeksAgo = new Date();
             twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -401,6 +406,21 @@ export function registerRoutes(app: Express): Server {
                 desc(trackingData.createdAt)
               ],
             });
+          }
+
+          // Log the search attempt
+          try {
+            await db.insert(searchLogs).values({
+              searchTerm: searchItem,
+              searchType: searchType,
+              success: results && results.length > 0,
+              resultsCount: results ? results.length : 0,
+              ipAddress: clientIp,
+              userAgent: userAgent,
+            });
+          } catch (logError) {
+            console.error('Failed to log search:', logError);
+            // Continue execution even if logging fails
           }
 
           if (results && results.length > 0) {
@@ -443,6 +463,20 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Failed to fetch tracking data:", error);
       res.status(500).json({ message: "Failed to fetch tracking data" });
+    }
+  });
+
+  // Get search logs (for admin)
+  app.get("/api/search-logs", async (req, res) => {
+    try {
+      const logs = await db.query.searchLogs.findMany({
+        orderBy: (searchLogs, { desc }) => [desc(searchLogs.timestamp)],
+        limit: 500, // Last 500 searches
+      });
+      res.json(logs);
+    } catch (error) {
+      console.error("Failed to fetch search logs:", error);
+      res.status(500).json({ message: "Failed to fetch search logs" });
     }
   });
 

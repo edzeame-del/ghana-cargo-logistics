@@ -15,6 +15,7 @@ import Tracking from "@/pages/tracking";
 import AuthPage from "@/pages/auth-page";
 import VesselsAdmin from "@/pages/admin/vessels";
 import TrackingAdmin from "@/pages/admin/tracking";
+import SearchLogsAdmin from "@/pages/admin/search-logs";
 import NotFound from "@/pages/not-found";
 import WhatsAppButton from "@/components/whatsapp-button";
 
@@ -35,6 +36,7 @@ function App() {
                 <Route path="/auth" component={AuthPage} />
                 <ProtectedRoute path="/admin/vessels" component={VesselsAdmin} />
                 <ProtectedRoute path="/admin/tracking" component={TrackingAdmin} />
+                <ProtectedRoute path="/admin/search-logs" component={SearchLogsAdmin} />
                 <Route component={NotFound} />
               </Switch>
             </main>
