@@ -54,13 +54,10 @@ export class GoogleSheetsService {
   private startPeriodicSync() {
     if (!this.isConfigured) return;
 
-    // Sync every day at 11pm
-    cron.schedule('0 23 * * *', async () => {
-      console.log('Starting scheduled Google Sheets sync at 11pm...');
-      await this.syncData();
-    });
+    // Auto-sync disabled - only manual sync available
+    console.log('Google Sheets automatic sync is disabled - use manual sync in admin interface');
 
-    // Initial sync
+    // Initial sync on startup
     setTimeout(() => this.syncData(), 5000);
   }
 

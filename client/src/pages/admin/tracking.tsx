@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, FileText, AlertCircle, Trash2, RefreshCw, Cloud, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload, FileText, AlertCircle, Trash2, RefreshCw, Cloud, CheckCircle, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AdminNav from "@/components/admin/admin-nav";
 import CleanupButton from "@/components/admin/cleanup-button";
@@ -32,19 +32,15 @@ export default function TrackingAdmin() {
   const [csvData, setCsvData] = useState<any[]>([]);
   const [preview, setPreview] = useState<any[]>([]);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: trackingResponse, isLoading } = useQuery({
-    queryKey: ['tracking-data', currentPage],
+  const { data: trackingData, isLoading } = useQuery({
+    queryKey: ['tracking-data'],
     queryFn: async () => {
-      const response = await fetch(`/api/tracking?page=${currentPage}&limit=200`);
+      const response = await fetch('/api/tracking');
       if (!response.ok) throw new Error('Failed to fetch tracking data');
       return response.json();
     },
   });
-
-  const trackingData = trackingResponse?.data || [];
-  const pagination = trackingResponse?.pagination;
 
   const { data: googleSheetsStatus } = useQuery({
     queryKey: ['google-sheets-status'],
@@ -71,7 +67,6 @@ export default function TrackingAdmin() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['tracking-data'] });
-      setCurrentPage(1); // Reset to first page after upload
       setCsvFile(null);
       setCsvData([]);
       setPreview([]);
@@ -105,10 +100,6 @@ export default function TrackingAdmin() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['tracking-data'] });
       setSelectedItems([]);
-      // Stay on current page unless it becomes invalid
-      if (currentPage > 1 && selectedItems.length >= trackingData.length && pagination?.totalPages && currentPage > pagination.totalPages) {
-        setCurrentPage(Math.max(1, currentPage - 1));
-      }
       toast({
         title: "Success",
         description: `Deleted ${result.count} tracking records successfully`,
@@ -475,7 +466,7 @@ export default function TrackingAdmin() {
               <div>
                 <CardTitle>Current Tracking Data</CardTitle>
                 <CardDescription>
-                  {pagination ? `${pagination.total} total records • Page ${currentPage} of ${pagination.totalPages}` : `${trackingData?.length || 0} tracking records`}
+                  {trackingData?.length || 0} tracking records in the system
                   {selectedItems.length > 0 && ` • ${selectedItems.length} selected`}
                 </CardDescription>
               </div>
@@ -558,39 +549,7 @@ export default function TrackingAdmin() {
               </div>
             )}
 
-            {/* Pagination Controls */}
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-gray-600">
-                  Showing {((currentPage - 1) * pagination.limit) + 1} to {Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total} records
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={!pagination.hasPrev}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm text-gray-600">Page</span>
-                    <span className="text-sm font-medium">{currentPage}</span>
-                    <span className="text-sm text-gray-600">of {pagination.totalPages}</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
-                    disabled={!pagination.hasNext}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
+
           </CardContent>
         </Card>
       </div>

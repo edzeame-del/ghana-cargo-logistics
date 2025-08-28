@@ -70,7 +70,7 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
   - **Pending Goods Sheet**: Successfully integrated with 700+ records  
   - Records automatically tagged with status: "Loaded" for main sheet, "Pending Loading" for pending sheet
   - Total system capacity: 26,000+ records across both sheets
-  - **Automatic Updates**: Syncs daily at 11pm using Google Sheets API with cron scheduling
+  - **Manual Sync Only**: Auto-sync disabled - only manual sync through admin interface
   - Initial sync on server startup, then regular updates to keep data current
   - Manual sync button in admin interface
   - Service account authentication with environment variables
