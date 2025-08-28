@@ -27,14 +27,31 @@ type SearchLog = {
   timestamp: string;
 };
 
+type DailyStats = {
+  date: string;
+  totalSearches: number;
+  successfulSearches: number;
+  failedSearches: number;
+  trackingNumberSearches: number;
+  shippingMarkSearches: number;
+};
+
+type SearchLogsResponse = {
+  logs: SearchLog[];
+  dailyStats: DailyStats;
+};
+
 export default function SearchLogsPage() {
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [successFilter, setSuccessFilter] = useState<string>("all");
 
-  const { data: searchLogs, isLoading, error } = useQuery<SearchLog[]>({
+  const { data: searchLogsData, isLoading, error } = useQuery<SearchLogsResponse>({
     queryKey: ["/api/search-logs"],
   });
+
+  const searchLogs = searchLogsData?.logs || [];
+  const dailyStats = searchLogsData?.dailyStats;
 
   // Calculate statistics
   const stats = searchLogs ? {
@@ -92,73 +109,157 @@ export default function SearchLogsPage() {
       </div>
 
       {/* Statistics Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Searches</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2">
-                <Search className="h-4 w-4 text-blue-500" />
-                <span className="text-2xl font-bold">{stats.total}</span>
-              </div>
-            </CardContent>
-          </Card>
+      {stats && dailyStats && (
+        <div className="space-y-6 mb-8">
+          {/* Daily Statistics */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">
+              Today's Search Activity ({format(new Date(), 'MMM dd, yyyy')})
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <Card className="border-blue-200 bg-blue-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Today's Searches</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-blue-500" />
+                    <span className="text-2xl font-bold text-blue-600">{dailyStats.totalSearches}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Successful</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-2xl font-bold text-green-600">{stats.successful}</span>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-green-200 bg-green-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Today Successful</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-2xl font-bold text-green-600">{dailyStats.successfulSearches}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Failed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="text-2xl font-bold text-red-600">{stats.failed}</span>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-red-200 bg-red-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Today Failed</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-2xl font-bold text-red-600">{dailyStats.failedSearches}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Success Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-purple-500" />
-                <span className="text-2xl font-bold">{stats.successRate}%</span>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-purple-200 bg-purple-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Today Success Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="h-4 w-4 text-purple-500" />
+                    <span className="text-2xl font-bold text-purple-600">
+                      {dailyStats.totalSearches > 0 
+                        ? Math.round((dailyStats.successfulSearches / dailyStats.totalSearches) * 100)
+                        : 0}%
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Tracking #</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold text-blue-600">{stats.trackingNumberSearches}</span>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Today Tracking #</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <span className="text-2xl font-bold text-blue-600">{dailyStats.trackingNumberSearches}</span>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Shipping Marks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold text-orange-600">{stats.shippingMarkSearches}</span>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Today Shipping Marks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <span className="text-2xl font-bold text-orange-600">{dailyStats.shippingMarkSearches}</span>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Total Statistics */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">All-Time Statistics</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Searches</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-blue-500" />
+                    <span className="text-2xl font-bold">{stats.total}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Successful</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-2xl font-bold text-green-600">{stats.successful}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Failed</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-2xl font-bold text-red-600">{stats.failed}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Overall Success Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="h-4 w-4 text-purple-500" />
+                    <span className="text-2xl font-bold">{stats.successRate}%</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Tracking #</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <span className="text-2xl font-bold text-blue-600">{stats.trackingNumberSearches}</span>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Shipping Marks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <span className="text-2xl font-bold text-orange-600">{stats.shippingMarkSearches}</span>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       )}
 

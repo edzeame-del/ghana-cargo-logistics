@@ -62,3 +62,20 @@ export const insertSearchLogSchema = createInsertSchema(searchLogs);
 export const selectSearchLogSchema = createSelectSchema(searchLogs);
 export type InsertSearchLog = typeof searchLogs.$inferInsert;
 export type SelectSearchLog = typeof searchLogs.$inferSelect;
+
+export const dailySearchStats = pgTable("daily_search_stats", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull().unique(), // YYYY-MM-DD format
+  totalSearches: integer("total_searches").notNull().default(0),
+  successfulSearches: integer("successful_searches").notNull().default(0),
+  failedSearches: integer("failed_searches").notNull().default(0),
+  trackingNumberSearches: integer("tracking_number_searches").notNull().default(0),
+  shippingMarkSearches: integer("shipping_mark_searches").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertDailySearchStatsSchema = createInsertSchema(dailySearchStats);
+export const selectDailySearchStatsSchema = createSelectSchema(dailySearchStats);
+export type InsertDailySearchStats = typeof dailySearchStats.$inferInsert;
+export type SelectDailySearchStats = typeof dailySearchStats.$inferSelect;

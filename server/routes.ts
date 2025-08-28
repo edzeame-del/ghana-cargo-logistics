@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { db } from "@db";
-import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema, searchLogs, insertSearchLogSchema } from "@db/schema";
+import { vessels, insertVesselSchema, trackingData, insertTrackingDataSchema, searchLogs, insertSearchLogSchema, dailySearchStats } from "@db/schema";
 import { eq, like, or, lt, inArray, and, ne, ilike, count, sql, gte } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { googleSheetsService } from "./google-sheets";
@@ -409,15 +409,19 @@ export function registerRoutes(app: Express): Server {
           }
 
           // Log the search attempt
+          const searchSuccess = results && results.length > 0;
           try {
             await db.insert(searchLogs).values({
               searchTerm: searchItem,
               searchType: searchType,
-              success: results && results.length > 0,
+              success: searchSuccess,
               resultsCount: results ? results.length : 0,
               ipAddress: clientIp,
               userAgent: userAgent,
             });
+
+            // Update daily statistics
+            await updateDailyStats(searchType, searchSuccess);
           } catch (logError) {
             console.error('Failed to log search:', logError);
             // Continue execution even if logging fails
@@ -466,6 +470,55 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Helper function to update daily search statistics
+  async function updateDailyStats(searchType: string, success: boolean) {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    try {
+      // Try to get today's stats
+      const existingStats = await db.query.dailySearchStats.findFirst({
+        where: eq(dailySearchStats.date, today),
+      });
+
+      if (existingStats) {
+        // Update existing record
+        const updates: any = {
+          totalSearches: existingStats.totalSearches + 1,
+          updatedAt: new Date(),
+        };
+
+        if (success) {
+          updates.successfulSearches = existingStats.successfulSearches + 1;
+        } else {
+          updates.failedSearches = existingStats.failedSearches + 1;
+        }
+
+        if (searchType === 'tracking_number') {
+          updates.trackingNumberSearches = existingStats.trackingNumberSearches + 1;
+        } else {
+          updates.shippingMarkSearches = existingStats.shippingMarkSearches + 1;
+        }
+
+        await db.update(dailySearchStats)
+          .set(updates)
+          .where(eq(dailySearchStats.date, today));
+      } else {
+        // Create new record for today
+        await db.insert(dailySearchStats).values({
+          date: today,
+          totalSearches: 1,
+          successfulSearches: success ? 1 : 0,
+          failedSearches: success ? 0 : 1,
+          trackingNumberSearches: searchType === 'tracking_number' ? 1 : 0,
+          shippingMarkSearches: searchType === 'shipping_mark' ? 1 : 0,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update daily stats:', error);
+      // Continue execution even if daily stats fail
+    }
+  }
+
   // Get search logs (for admin)
   app.get("/api/search-logs", async (req, res) => {
     try {
@@ -473,7 +526,24 @@ export function registerRoutes(app: Express): Server {
         orderBy: (searchLogs, { desc }) => [desc(searchLogs.timestamp)],
         limit: 500, // Last 500 searches
       });
-      res.json(logs);
+
+      // Get today's stats for daily metrics
+      const today = new Date().toISOString().split('T')[0];
+      const todayStats = await db.query.dailySearchStats.findFirst({
+        where: eq(dailySearchStats.date, today),
+      });
+
+      res.json({
+        logs,
+        dailyStats: todayStats || {
+          date: today,
+          totalSearches: 0,
+          successfulSearches: 0,
+          failedSearches: 0,
+          trackingNumberSearches: 0,
+          shippingMarkSearches: 0,
+        }
+      });
     } catch (error) {
       console.error("Failed to fetch search logs:", error);
       res.status(500).json({ message: "Failed to fetch search logs" });
