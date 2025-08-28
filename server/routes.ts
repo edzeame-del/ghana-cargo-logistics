@@ -839,6 +839,16 @@ export function registerRoutes(app: Express): Server {
   });
 
   const httpServer = createServer(app);
+  // Health check endpoint for Google Cloud
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      service: 'cargo-logistics',
+      version: process.env.npm_package_version || '1.0.0'
+    });
+  });
+
   return httpServer;
 }
 
