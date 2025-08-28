@@ -61,11 +61,14 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
    - Advanced filtering by search term, type, and success status
    - Detailed logs with IP addresses, timestamps, and result counts
    - Pagination support (200 records per page) for large datasets
+   - **User Activity Heat Map**: Visual representation of search patterns by hour and day of week
    - Pattern analysis for optimizing search functionality
 
 3. **Admin Database Search** (`/admin/database-search`):
    - Direct search interface for the tracking database
    - Search by tracking number or shipping mark with auto-detection
+   - **Unlimited shipping mark search**: Shows all entries without 2-week limitation
+   - Pagination with 100 records per page for large result sets
    - Real-time search results with full record details
    - Complete tracking information display with status badges
    - Error handling for failed searches and network issues
@@ -82,6 +85,14 @@ A comprehensive Ghana-focused cargo and logistics web application that provides 
 
 ## Recent Changes
 - **Date**: 2025-08-28
+- **User Activity Heat Map**: Implemented comprehensive search pattern visualization
+  - Visual heat map showing search activity by hour and day of week
+  - Color-coded intensity levels from light to dark blue
+  - Configurable date ranges (7, 14, 30, 60, 90 days)
+  - Weekly and hourly pattern analysis with peak identification
+  - Real-time data updates every 5 minutes
+  - Interactive hover tooltips showing exact search counts
+  - API endpoint at `/api/search-heatmap` for data processing
 - **Search Logging System**: Comprehensive admin search monitoring implemented
   - All search attempts automatically logged to database with success/failure tracking
   - Tracks search term, type (tracking_number vs shipping_mark), results count, IP address, and timestamp

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, Database, Package, AlertCircle } from "lucide-react";
+import { Loader2, Search, Database, Package, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminNav from "@/components/admin/admin-nav";
 
@@ -31,6 +31,18 @@ type TrackingRecord = {
   updatedAt: string;
 };
 
+type SearchResponse = {
+  results: TrackingRecord[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+};
+
 export default function DatabaseSearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState<string>("all");
@@ -38,35 +50,32 @@ export default function DatabaseSearchPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchError, setSearchError] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
+  const itemsPerPage = 100;
 
-  const handleSearch = async () => {
+  const handleSearch = async (page = 1) => {
     if (!searchTerm.trim()) return;
 
     setIsSearching(true);
     setSearchError("");
     setHasSearched(true);
+    setCurrentPage(page);
 
     try {
-      let searchUrl = "";
       const trimmedTerm = searchTerm.trim();
-
-      if (searchType === "tracking_number") {
-        searchUrl = `/api/tracking/${encodeURIComponent(trimmedTerm)}`;
-      } else if (searchType === "shipping_mark") {
-        searchUrl = `/api/tracking/${encodeURIComponent(trimmedTerm)}`;
-      } else {
-        // Auto-detect search type
-        searchUrl = `/api/tracking/${encodeURIComponent(trimmedTerm)}`;
-      }
+      const searchUrl = `/api/admin/search/${encodeURIComponent(trimmedTerm)}?page=${page}&limit=${itemsPerPage}`;
 
       const response = await fetch(searchUrl);
       
       if (response.ok) {
-        const results = await response.json();
-        setSearchResults(Array.isArray(results) ? results : []);
+        const data: SearchResponse = await response.json();
+        setSearchResults(data.results || []);
+        setPagination(data.pagination);
       } else {
         const error = await response.json();
         setSearchResults([]);
+        setPagination(null);
         if (response.status === 404) {
           setSearchError("No records found matching your search criteria");
         } else {
@@ -77,6 +86,7 @@ export default function DatabaseSearchPage() {
       console.error("Search error:", error);
       setSearchError("Network error occurred while searching");
       setSearchResults([]);
+      setPagination(null);
     } finally {
       setIsSearching(false);
     }
@@ -93,6 +103,12 @@ export default function DatabaseSearchPage() {
     setSearchResults([]);
     setHasSearched(false);
     setSearchError("");
+    setCurrentPage(1);
+    setPagination(null);
+  };
+
+  const handlePageChange = (page: number) => {
+    handleSearch(page);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -174,16 +190,48 @@ export default function DatabaseSearchPage() {
         {/* Search Results */}
         {hasSearched && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
                 Search Results
-                {searchResults.length > 0 && (
+                {pagination && (
                   <Badge variant="secondary" className="ml-2">
-                    {searchResults.length} record{searchResults.length !== 1 ? 's' : ''}
+                    {pagination.totalCount} total record{pagination.totalCount !== 1 ? 's' : ''}
+                    {pagination.totalPages > 1 && (
+                      <span className="ml-1">
+                        (Page {pagination.page} of {pagination.totalPages})
+                      </span>
+                    )}
                   </Badge>
                 )}
               </CardTitle>
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={!pagination.hasPrevPage || isSearching}
+                    className="flex items-center space-x-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span>Previous</span>
+                  </Button>
+                  <span className="text-sm text-muted-foreground px-2">
+                    {currentPage} / {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={!pagination.hasNextPage || isSearching}
+                    className="flex items-center space-x-1"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {searchError ? (
@@ -254,6 +302,61 @@ export default function DatabaseSearchPage() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, pagination.totalCount)} of {pagination.totalCount} results
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={!pagination.hasPrevPage || isSearching}
+                      className="flex items-center space-x-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Previous</span>
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (pagination.totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= pagination.totalPages - 2) {
+                          pageNum = pagination.totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={pageNum === currentPage ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={isSearching}
+                            className="w-8 h-8 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={!pagination.hasNextPage || isSearching}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

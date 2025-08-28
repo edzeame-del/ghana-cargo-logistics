@@ -16,6 +16,7 @@ import { Loader2, Search, TrendingUp, AlertCircle, CheckCircle2, ChevronLeft, Ch
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminNav from "@/components/admin/admin-nav";
+import SearchHeatmap from "@/components/admin/search-heatmap";
 
 type SearchLog = {
   id: number;
@@ -121,6 +122,9 @@ export default function SearchLogsPage() {
           Monitor all search attempts made by users, tracking success rates and patterns
         </p>
       </div>
+
+      {/* Search Activity Heat Map */}
+      <SearchHeatmap />
 
       {/* Statistics Cards */}
       {stats && dailyStats && (

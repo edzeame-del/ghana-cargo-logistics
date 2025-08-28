@@ -519,6 +519,212 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
+  // Admin database search - bypasses 2-week limitation for shipping marks
+  app.get("/api/admin/search/:searchTerm", async (req, res) => {
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const { searchTerm } = req.params;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 100;
+        const offset = (page - 1) * limit;
+
+        const searchItems = searchTerm.split(',').map(n => n.trim()).filter(n => n.length > 0);
+
+        if (searchItems.length === 0) {
+          return res.status(400).json({ message: "No valid search terms provided" });
+        }
+
+        let allResults = [];
+        let totalCount = 0;
+
+        for (const searchItem of searchItems) {
+          let results = [];
+          let count = 0;
+          
+          // Check if this looks like a tracking number (must contain numbers, not just letters)
+          const isLikelyTrackingNumber = /^[A-Z0-9]+$/i.test(searchItem) && searchItem.length >= 6 && /\d/.test(searchItem);
+          
+          if (isLikelyTrackingNumber) {
+            // Search as tracking number
+            if (searchItem.length === 6) {
+              // Search by last 6 digits
+              results = await db.query.trackingData.findMany({
+                where: like(trackingData.trackingNumber, `%${searchItem}`),
+                orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+                limit: limit,
+                offset: offset,
+              });
+              
+              // Get total count for pagination
+              const countResult = await db.select({ count: count() }).from(trackingData)
+                .where(like(trackingData.trackingNumber, `%${searchItem}`));
+              count = countResult[0]?.count || 0;
+            } else {
+              // Search by full tracking number
+              results = await db.query.trackingData.findMany({
+                where: eq(trackingData.trackingNumber, searchItem),
+                orderBy: (trackingData, { desc }) => [desc(trackingData.createdAt)],
+                limit: limit,
+                offset: offset,
+              });
+              
+              // Get total count for pagination
+              const countResult = await db.select({ count: count() }).from(trackingData)
+                .where(eq(trackingData.trackingNumber, searchItem));
+              count = countResult[0]?.count || 0;
+            }
+          } else {
+            // Search as shipping mark - show ALL entries (no 2-week limit for admin)
+            results = await db.query.trackingData.findMany({
+              where: ilike(trackingData.shippingMark, `%${searchItem}%`),
+              orderBy: (trackingData, { desc, asc }) => [
+                desc(trackingData.status), // Pending Loading first
+                desc(trackingData.dateReceived), // Most recent first
+                desc(trackingData.createdAt)
+              ],
+              limit: limit,
+              offset: offset,
+            });
+            
+            // Get total count for pagination
+            const countResult = await db.select({ count: count() }).from(trackingData)
+              .where(ilike(trackingData.shippingMark, `%${searchItem}%`));
+            count = countResult[0]?.count || 0;
+          }
+
+          if (results.length > 0) {
+            allResults.push(...results);
+          }
+          totalCount = Math.max(totalCount, count);
+        }
+
+        if (allResults.length === 0) {
+          return res.status(404).json({ 
+            message: "No records found",
+            results: [],
+            pagination: {
+              page,
+              limit,
+              totalCount: 0,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPrevPage: false
+            }
+          });
+        }
+
+        // Remove duplicates based on ID
+        const uniqueResults = Array.from(
+          new Map(allResults.map(item => [item.id, item])).values()
+        );
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        res.json({
+          results: uniqueResults,
+          pagination: {
+            page,
+            limit,
+            totalCount,
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+          }
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        attempt++;
+        console.error(`Admin search attempt ${attempt} failed:`, error);
+        
+        if (attempt >= maxRetries) {
+          res.status(500).json({ message: "Database connection error. Please try again." });
+          break;
+        }
+        
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+  });
+
+  // Get search activity heat map data (for admin)
+  app.get("/api/search-heatmap", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const logs = await db.query.searchLogs.findMany({
+        where: gte(searchLogs.timestamp, startDate),
+        orderBy: (searchLogs, { asc }) => [asc(searchLogs.timestamp)],
+      });
+
+      // Process data for heat map
+      const heatmapData = [];
+      const hourlyData = Array(24).fill(0).map(() => Array(7).fill(0));
+      const dailyTotals = {};
+
+      logs.forEach(log => {
+        const date = new Date(log.timestamp);
+        const hour = date.getHours();
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const dateKey = date.toISOString().split('T')[0];
+
+        hourlyData[hour][dayOfWeek]++;
+        dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + 1;
+      });
+
+      // Find max value for normalization
+      const maxValue = Math.max(...hourlyData.flat());
+
+      // Create heatmap grid data
+      for (let hour = 0; hour < 24; hour++) {
+        for (let day = 0; day < 7; day++) {
+          const count = hourlyData[hour][day];
+          heatmapData.push({
+            hour,
+            day,
+            count,
+            intensity: maxValue > 0 ? count / maxValue : 0,
+          });
+        }
+      }
+
+      // Get weekly pattern
+      const weeklyPattern = Array(7).fill(0);
+      logs.forEach(log => {
+        const dayOfWeek = new Date(log.timestamp).getDay();
+        weeklyPattern[dayOfWeek]++;
+      });
+
+      // Get hourly pattern
+      const hourlyPattern = Array(24).fill(0);
+      logs.forEach(log => {
+        const hour = new Date(log.timestamp).getHours();
+        hourlyPattern[hour]++;
+      });
+
+      res.json({
+        heatmapData,
+        weeklyPattern,
+        hourlyPattern,
+        dailyTotals,
+        totalSearches: logs.length,
+        dateRange: {
+          start: startDate.toISOString(),
+          end: new Date().toISOString(),
+          days
+        }
+      });
+    } catch (error) {
+      console.error("Failed to fetch search heatmap data:", error);
+      res.status(500).json({ message: "Failed to fetch heatmap data" });
+    }
+  });
+
   // Get search logs (for admin)
   app.get("/api/search-logs", async (req, res) => {
     try {
